@@ -238,11 +238,11 @@ docker-compose up -d
 **What this does:**
 - Downloads PostgreSQL 15 image (first time only)
 - Starts a PostgreSQL container named `product-review-postgres`
-- Creates database: `productreviewdb`
-- Creates user: `productreview`
-- Sets password: `productreview123`
+- Creates database, user, and password from environment variables (see chat for defaults)
 - Exposes port: `5432` to your host machine
 - Creates a persistent volume for data (data survives container restarts)
+
+**Note:** Database credentials are configured via environment variables. Default values are provided in chat.
 
 **Expected output:**
 ```
@@ -284,9 +284,9 @@ See `docs/DBeaver_Connection_Guide.md` for detailed DBeaver setup instructions.
 **Quick Connection Settings:**
 - **Host:** `localhost`
 - **Port:** `5432`
-- **Database:** `productreviewdb`
-- **Username:** `productreview`
-- **Password:** `productreview123`
+- **Database:** Set via `POSTGRES_DB` environment variable
+- **Username:** Set via `POSTGRES_USER` environment variable
+- **Password:** Set via `POSTGRES_PASSWORD` environment variable
 
 **If DBeaver cannot connect:**
 - Make sure Docker container is running: `docker ps`
@@ -310,9 +310,9 @@ See `docs/DBeaver_Connection_Guide.md` for detailed DBeaver setup instructions.
 **Quick Connection Settings:**
 - **Host:** `localhost`
 - **Port:** `5432`
-- **Database:** `productreviewdb`
-- **Username:** `productreview`
-- **Password:** `productreview123`
+- **Database:** Set via `POSTGRES_DB` environment variable
+- **Username:** Set via `POSTGRES_USER` environment variable
+- **Password:** Set via `POSTGRES_PASSWORD` environment variable
 
 ---
 
@@ -704,18 +704,18 @@ Before sharing the APK with your employer, verify:
   3. **Test connection from command line:**
      ```bash
      # Windows (if you have psql installed)
-     psql -h localhost -p 5432 -U productreview -d productreviewdb
+     psql -h localhost -p 5432 -U $POSTGRES_USER -d $POSTGRES_DB
      
      # Or use Docker to test:
-     docker exec -it product-review-postgres psql -U productreview -d productreviewdb
+     docker exec -it product-review-postgres psql -U $POSTGRES_USER -d $POSTGRES_DB
      ```
   
   4. **Verify connection settings in DBeaver:**
      - Host: `localhost` (not `127.0.0.1` or IP address)
      - Port: `5432`
-     - Database: `productreviewdb`
-     - Username: `productreview`
-     - Password: `productreview123`
+     - Database: Check `POSTGRES_DB` environment variable
+     - Username: Check `POSTGRES_USER` environment variable
+     - Password: Check `POSTGRES_PASSWORD` environment variable
   
   5. **Check Windows Firewall:**
      - Windows may block port 5432
@@ -729,7 +729,7 @@ Before sharing the APK with your employer, verify:
 
 **Problem: "Database does not exist"**
 - **Solution:** 
-  - Check docker-compose.yml has correct database name: `productreviewdb`
+  - Check `POSTGRES_DB` environment variable matches your database name
   - Restart container: `docker-compose down && docker-compose up -d`
   - Check container logs: `docker-compose logs postgres`
 
@@ -835,9 +835,9 @@ The backend provides the following endpoints:
 **PostgreSQL (Production):**
 - **Host:** `localhost`
 - **Port:** `5432`
-- **Database:** `productreviewdb`
-- **Username:** `productreview`
-- **Password:** `productreview123`
+- **Database:** Set via `POSTGRES_DB` environment variable
+- **Username:** Set via `POSTGRES_USER` environment variable
+- **Password:** Set via `POSTGRES_PASSWORD` environment variable
 - **Tables:** `products`, `reviews`
 - **Indexes:** Optimized for read-heavy patterns (product_id, created_at, category)
 

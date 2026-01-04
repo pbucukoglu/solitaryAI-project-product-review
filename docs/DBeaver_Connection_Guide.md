@@ -46,10 +46,12 @@ Fill in the following information:
 **Main Tab:**
 - **Host:** `localhost`
 - **Port:** `5432`
-- **Database:** `productreviewdb`
-- **Username:** `productreview`
-- **Password:** `productreview123`
+- **Database:** Set via `POSTGRES_DB` environment variable (default: see chat)
+- **Username:** Set via `POSTGRES_USER` environment variable (default: see chat)
+- **Password:** Set via `POSTGRES_PASSWORD` environment variable (default: see chat)
 - **Show all databases:** Leave unchecked
+
+**Note:** Database credentials are stored in environment variables. Check chat or your local `.env` file for actual values.
 
 **Driver Properties Tab (Optional):**
 - No changes needed for basic connection
@@ -70,7 +72,7 @@ Fill in the following information:
 
 1. In the **Database Navigator** panel (left side), expand your connection
 2. You should see:
-   - **Databases** → `productreviewdb`
+   - **Databases** → (Your database name from `POSTGRES_DB` environment variable)
    - **Schemas** → `public`
    - **Tables:**
      - `products`
@@ -80,7 +82,7 @@ Fill in the following information:
 ### View Tables
 
 1. **Refresh the connection first:**
-   - Right-click on `productreviewdb` connection → **Refresh**
+   - Right-click on your database connection → **Refresh**
    - Or press `F5` while connection is selected
    - Wait for refresh to complete
 
@@ -90,7 +92,7 @@ Fill in the following information:
 
 3. **If tables don't appear:**
    - Right-click on `public` schema → **Refresh**
-   - Check if you're connected to the correct database (`productreviewdb`)
+   - Check if you're connected to the correct database (check your `POSTGRES_DB` environment variable)
    - Verify connection settings match exactly
 
 ### View Table Data
@@ -200,14 +202,14 @@ Fill in the following information:
 ### Problem: "Authentication failed"
 
 **Solutions:**
-1. Verify credentials match `docker-compose.yml`:
-   - Username: `productreview`
-   - Password: `productreview123`
-   - Database: `productreviewdb`
+1. Verify credentials match your environment variables:
+   - Username: Check `POSTGRES_USER` environment variable
+   - Password: Check `POSTGRES_PASSWORD` environment variable
+   - Database: Check `POSTGRES_DB` environment variable
 
-2. Check if database was created:
+2. Check if database was created (replace with your actual values):
    ```bash
-   docker exec -it product-review-postgres psql -U productreview -d productreviewdb -c "\dt"
+   docker exec -it product-review-postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "\dt"
    ```
 
 ### Problem: "Driver not found"
@@ -219,7 +221,7 @@ Fill in the following information:
 ### Problem: "Database does not exist"
 
 **Solutions:**
-1. Verify database name is `productreviewdb` (case-sensitive)
+1. Verify database name matches your `POSTGRES_DB` environment variable (case-sensitive)
 2. Check docker-compose.yml has correct database name
 3. Restart container: `docker-compose down && docker-compose up -d`
 

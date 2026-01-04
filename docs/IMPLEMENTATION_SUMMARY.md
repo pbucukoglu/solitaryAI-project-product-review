@@ -11,9 +11,9 @@ This document summarizes all changes made to set up PostgreSQL database, environ
 ✅ **Docker Compose Configuration**
 - `docker-compose.yml` already configured with:
   - PostgreSQL 15 Alpine
-  - Database: `productreviewdb`
-  - User: `productreview`
-  - Password: `productreview123`
+  - Database: Set via `POSTGRES_DB` environment variable
+  - User: Set via `POSTGRES_USER` environment variable
+  - Password: Set via `POSTGRES_PASSWORD` environment variable
   - Port: `5432` exposed to host
   - Persistent volume: `postgres_data`
 
@@ -208,9 +208,9 @@ eas build --platform android --profile preview
 ### Database Connection (DBeaver)
 - **Host:** `localhost`
 - **Port:** `5432`
-- **Database:** `productreviewdb`
-- **Username:** `productreview`
-- **Password:** `productreview123`
+- **Database:** Set via `POSTGRES_DB` environment variable
+- **Username:** Set via `POSTGRES_USER` environment variable
+- **Password:** Set via `POSTGRES_PASSWORD` environment variable
 
 ### API URLs
 - **Android Emulator:** `http://10.0.2.2:8080` (automatic)
