@@ -4,6 +4,7 @@ import {
   View,
   Text,
   TextInput,
+  ScrollView,
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
@@ -11,6 +12,9 @@ import {
   FlatList,
   Image,
   Dimensions,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   RefreshControl,
   Modal,
   Pressable,
@@ -345,15 +349,21 @@ const ProductDetailScreen = ({ route, navigation }) => {
       {isOwn && (
         <View style={styles.reviewActionsRow}>
           <TouchableOpacity
-            style={[styles.reviewActionButton, { backgroundColor: theme.colors.surface }]}
+            style={[styles.reviewActionButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
             onPress={() => openEdit(item)}
+            activeOpacity={0.85}
+            hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
           >
+            <Ionicons name="create-outline" size={16} color={theme.colors.text} />
             <Text style={[styles.reviewActionText, { color: theme.colors.text }]}>Edit</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.reviewActionButton, { backgroundColor: theme.colors.surface, marginLeft: 10 }]}
+            style={[styles.reviewActionButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, marginLeft: 10 }]}
             onPress={() => confirmDelete(item.id)}
+            activeOpacity={0.85}
+            hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
           >
+            <Ionicons name="trash-outline" size={16} color={theme.colors.danger} />
             <Text style={[styles.reviewActionText, { color: theme.colors.danger }]}>Delete</Text>
           </TouchableOpacity>
         </View>
@@ -686,59 +696,75 @@ const ProductDetailScreen = ({ route, navigation }) => {
       </Animated.ScrollView>
 
       <Modal visible={editVisible} animationType="slide" transparent onRequestClose={closeEdit}>
-        <View style={styles.editOverlay}>
+        <KeyboardAvoidingView
+          style={styles.editOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <Pressable style={styles.editOverlayTap} onPress={Keyboard.dismiss}>
+            <View />
+          </Pressable>
           <View style={[styles.editCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}> 
-            <View style={styles.editHeader}>
-              <Text style={[styles.editTitle, { color: theme.colors.text }]}>Edit your review</Text>
-              <TouchableOpacity onPress={closeEdit}>
-                <Text style={[styles.editClose, { color: theme.colors.text }]}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={[styles.editLabel, { color: theme.colors.text }]}>Your Name (Optional)</Text>
-            <TextInput
-              style={[styles.editInput, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceAlt }]}
-              value={editReviewerName}
-              onChangeText={setEditReviewerName}
-              placeholder="Enter your name"
-              placeholderTextColor={theme.colors.textSecondary}
-            />
-
-            <Text style={[styles.editLabel, { color: theme.colors.text }]}>Rating</Text>
-            <View style={styles.editStarsRow}>
-              {[1, 2, 3, 4, 5].map((s) => (
-                <TouchableOpacity key={s} onPress={() => setEditRating(s)} style={styles.editStarButton}>
-                  <Text style={[styles.editStar, { color: theme.colors.text }]}>{s <= editRating ? '⭐' : '☆'}</Text>
-                </TouchableOpacity>
-              ))}
-              <Text style={[styles.editRatingText, { color: theme.colors.text }]}>{editRating} / 5</Text>
-            </View>
-
-            <Text style={[styles.editLabel, { color: theme.colors.text }]}>Review Comment *</Text>
-            <TextInput
-              style={[styles.editInput, styles.editTextArea, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceAlt }]}
-              value={editComment}
-              onChangeText={setEditComment}
-              placeholder="Write your review (minimum 10 characters)"
-              placeholderTextColor={theme.colors.textSecondary}
-              multiline
-              numberOfLines={6}
-              textAlignVertical="top"
-            />
-
-            <TouchableOpacity
-              style={[styles.editSubmit, { backgroundColor: theme.colors.primary }, editSubmitting && styles.editSubmitDisabled]}
-              onPress={submitEdit}
-              disabled={editSubmitting}
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.editContent}
             >
-              {editSubmitting ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.editSubmitText}>Save changes</Text>
-              )}
-            </TouchableOpacity>
+              <View style={styles.editHeader}>
+                <Text style={[styles.editTitle, { color: theme.colors.text }]}>Edit your review</Text>
+                <TouchableOpacity onPress={closeEdit}>
+                  <Text style={[styles.editClose, { color: theme.colors.text }]}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[styles.editLabel, { color: theme.colors.text }]}>Your Name (Optional)</Text>
+              <TextInput
+                style={[styles.editInput, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceAlt }]}
+                value={editReviewerName}
+                onChangeText={setEditReviewerName}
+                placeholder="Enter your name"
+                placeholderTextColor={theme.colors.textSecondary}
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+              />
+
+              <Text style={[styles.editLabel, { color: theme.colors.text }]}>Rating</Text>
+              <View style={styles.editStarsRow}>
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <TouchableOpacity key={s} onPress={() => setEditRating(s)} style={styles.editStarButton}>
+                    <Text style={[styles.editStar, { color: theme.colors.text }]}>{s <= editRating ? '⭐' : '☆'}</Text>
+                  </TouchableOpacity>
+                ))}
+                <Text style={[styles.editRatingText, { color: theme.colors.text }]}>{editRating} / 5</Text>
+              </View>
+
+              <Text style={[styles.editLabel, { color: theme.colors.text }]}>Review Comment *</Text>
+              <TextInput
+                style={[styles.editInput, styles.editTextArea, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceAlt }]}
+                value={editComment}
+                onChangeText={setEditComment}
+                placeholder="Write your review (minimum 10 characters)"
+                placeholderTextColor={theme.colors.textSecondary}
+                multiline
+                numberOfLines={6}
+                textAlignVertical="top"
+                blurOnSubmit
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+              />
+
+              <TouchableOpacity
+                style={[styles.editSubmit, { backgroundColor: theme.colors.primary }, editSubmitting && styles.editSubmitDisabled]}
+                onPress={submitEdit}
+                disabled={editSubmitting}
+              >
+                {editSubmitting ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.editSubmitText}>Save changes</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Animated.View style={[styles.fabContainer, { transform: [{ scale: fabScale }] }]}>
@@ -915,13 +941,17 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   reviewActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
+    borderWidth: 1,
   },
   reviewActionText: {
     fontSize: 13,
     fontWeight: '800',
+    marginLeft: 6,
   },
   reviewIdentity: {
     flexDirection: 'row',
@@ -1216,11 +1246,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
+  editOverlayTap: {
+    flex: 1,
+  },
   editCard: {
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     padding: 16,
     borderWidth: 1,
+  },
+  editContent: {
+    paddingBottom: 12,
   },
   editHeader: {
     flexDirection: 'row',
