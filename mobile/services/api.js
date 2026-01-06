@@ -49,9 +49,34 @@ export const reviewService = {
     if (minRating !== null && minRating !== undefined) {
       params.minRating = minRating;
     }
+
+    // DEBUG: Log API call
+    try {
+      console.log('🌐 [API] reviewService.getByProductId called with params:', { productId, ...params });
+      console.log(
+        '🌐 [API] Full URL will be:',
+        `${API_BASE_URL}${API_ENDPOINTS.REVIEWS}/product/${productId}?${new URLSearchParams(params).toString()}`
+      );
+    } catch {
+      // no-op (avoid crashing on logging)
+    }
+
     const response = await api.get(`${API_ENDPOINTS.REVIEWS}/product/${productId}`, {
       params,
     });
+
+    // DEBUG: Log response summary
+    try {
+      console.log('🌐 [API] Reviews response received:', {
+        totalElements: response.data?.totalElements,
+        reviewsCount: response.data?.content?.length || 0,
+        last: response.data?.last,
+        firstReviewId: response.data?.content?.[0]?.id,
+      });
+    } catch {
+      // no-op
+    }
+
     return response.data;
   },
 };

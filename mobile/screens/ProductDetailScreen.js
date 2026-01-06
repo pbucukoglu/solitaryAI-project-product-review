@@ -17,7 +17,9 @@ import {
   useColorScheme,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { productService, reviewService } from '../services/api';
+import { wishlistService } from '../services/wishlist';
 
 import OfflineBanner from '../components/OfflineBanner';
 import Skeleton, { SkeletonRow } from '../components/Skeleton';
@@ -47,6 +49,8 @@ const ProductDetailScreen = ({ route, navigation }) => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
   const previewListRef = useRef(null);
+
+  const [isFavorite, setIsFavorite] = useState(false);
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const ratingPulse = useRef(new Animated.Value(1)).current;
@@ -104,6 +108,24 @@ const ProductDetailScreen = ({ route, navigation }) => {
     }
   }, [loadProductDetails, loadReviews]);
 
+  const loadFavoriteState = React.useCallback(async () => {
+    try {
+      const fav = await wishlistService.isFavorite(productId);
+      setIsFavorite(Boolean(fav));
+    } catch (e) {
+      console.error('Error loading favorite state:', e);
+    }
+  }, [productId]);
+
+  const toggleFavorite = React.useCallback(async () => {
+    try {
+      const ids = await wishlistService.toggle(productId);
+      setIsFavorite(ids.includes(Number(productId)));
+    } catch (e) {
+      console.error('Error toggling favorite:', e);
+    }
+  }, [productId]);
+
   // Load product details when screen mounts
   useEffect(() => {
     refreshAll();
@@ -113,8 +135,13 @@ const ProductDetailScreen = ({ route, navigation }) => {
   useFocusEffect(
     React.useCallback(() => {
       refreshAll();
-    }, [refreshAll])
+      loadFavoriteState();
+    }, [refreshAll, loadFavoriteState])
   );
+
+  useEffect(() => {
+    loadFavoriteState();
+  }, [loadFavoriteState]);
 
   useEffect(() => {
     if (!product) return;
@@ -270,6 +297,18 @@ const ProductDetailScreen = ({ route, navigation }) => {
     <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <OfflineBanner theme={theme} />
+
+      <TouchableOpacity
+        style={[styles.favoriteButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+        onPress={toggleFavorite}
+        hitSlop={{ top: 12, left: 12, right: 12, bottom: 12 }}
+      >
+        <Ionicons
+          name={isFavorite ? 'heart' : 'heart-outline'}
+          size={22}
+          color={isFavorite ? theme.colors.danger : theme.colors.textSecondary}
+        />
+      </TouchableOpacity>
 
       <Animated.View style={[styles.stickyHeader, { opacity: stickyOpacity, backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}> 
         <Text style={[styles.stickyTitle, { color: theme.colors.text }]} numberOfLines={1}>
@@ -890,6 +929,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    zIndex: 60,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 2,
+    elevation: 4,
   },
   stickyTitle: {
     fontSize: 16,

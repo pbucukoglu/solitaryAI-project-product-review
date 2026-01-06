@@ -14,7 +14,10 @@ import {
   ScrollView,
   useColorScheme,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { productService } from '../services/api';
+import { wishlistService } from '../services/wishlist';
 
 import OfflineBanner from '../components/OfflineBanner';
 import Skeleton, { SkeletonRow } from '../components/Skeleton';
@@ -36,6 +39,26 @@ const ProductListScreen = ({ navigation }) => {
   const [sortDir, setSortDir] = useState('ASC');
   const [showFilters, setShowFilters] = useState(false);
   const [categories] = useState(['Electronics', 'Clothing', 'Books', 'Home & Kitchen', 'Sports & Outdoors']);
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
+  const [showFavorites, setShowFavorites] = useState(false);
+
+  const loadWishlist = React.useCallback(async () => {
+    try {
+      const ids = await wishlistService.getIds();
+      setFavoriteIds(new Set(ids));
+    } catch (e) {
+      console.error('Error loading wishlist:', e);
+    }
+  }, []);
+
+  const toggleFavorite = React.useCallback(async (productId) => {
+    try {
+      const ids = await wishlistService.toggle(productId);
+      setFavoriteIds(new Set(ids));
+    } catch (e) {
+      console.error('Error toggling wishlist:', e);
+    }
+  }, []);
 
   const loadProducts = async (pageNum = 0, append = false, overrideFilters = null) => {
     try {
@@ -110,10 +133,17 @@ const ProductListScreen = ({ navigation }) => {
   
   // Initial load on mount
   useEffect(() => {
+    loadWishlist();
     loadProducts(0, false);
     isFirstMount.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only on mount
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadWishlist();
+    }, [loadWishlist])
+  );
   
   // Combined effect: Load products when filters, sort, or search changes
   useEffect(() => {
@@ -201,12 +231,24 @@ const ProductListScreen = ({ navigation }) => {
 
   const renderProduct = ({ item }) => {
     const firstImage = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : null;
+    const isFavorite = favoriteIds.has(item.id);
     
     return (
       <TouchableOpacity
         style={[styles.productCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
         onPress={() => navigation.navigate('ProductDetail', { productId: item.id })}
       >
+        <TouchableOpacity
+          style={[styles.favoriteButton, { backgroundColor: theme.colors.surface }]}
+          onPress={() => toggleFavorite(item.id)}
+          hitSlop={{ top: 12, left: 12, right: 12, bottom: 12 }}
+        >
+          <Ionicons
+            name={isFavorite ? 'heart' : 'heart-outline'}
+            size={20}
+            color={isFavorite ? theme.colors.danger : theme.colors.textSecondary}
+          />
+        </TouchableOpacity>
         {firstImage && (
           <Image 
             source={{ uri: firstImage }} 
@@ -219,7 +261,7 @@ const ProductListScreen = ({ navigation }) => {
           <Text style={[styles.productCategory, { color: theme.colors.textSecondary }]}>{item.category}</Text>
           <View style={styles.productMeta}>
             <Text style={[styles.productPrice, { color: theme.colors.primary }]}>${item.price.toFixed(2)}</Text>
-            {item.averageRating > 0 && (
+            {item.reviewCount > 0 && (
               <View style={styles.ratingContainer}>
                 <Text style={[styles.ratingText, { color: theme.colors.text }]}>⭐ {item.averageRating.toFixed(1)}</Text>
                 <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({item.reviewCount})</Text>
@@ -268,6 +310,12 @@ const ProductListScreen = ({ navigation }) => {
         >
           <Text style={styles.filterButtonText}>🔍 Filters</Text>
         </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.filterButton, { backgroundColor: showFavorites ? theme.colors.primary : theme.colors.surfaceAlt, marginLeft: 10, borderWidth: 1, borderColor: theme.colors.border }]}
+          onPress={() => setShowFavorites((v) => !v)}
+        >
+          <Text style={[styles.filterButtonText, { color: showFavorites ? '#fff' : theme.colors.text }]}>♥ Favorites</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Active Filters */}
@@ -302,14 +350,14 @@ const ProductListScreen = ({ navigation }) => {
         />
       ) : (
         <FlatList
-        data={products}
+        data={showFavorites ? products.filter((p) => favoriteIds.has(p.id)) : products}
         renderItem={renderProduct}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
         }
-        onEndReached={loadMore}
+        onEndReached={showFavorites ? undefined : loadMore}
         onEndReachedThreshold={0.5}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -321,12 +369,14 @@ const ProductListScreen = ({ navigation }) => {
                 </TouchableOpacity>
               </>
             ) : (
-              <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>No products found</Text>
+              <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+                {showFavorites ? 'No favorites yet' : 'No products found'}
+              </Text>
             )}
           </View>
         }
         ListFooterComponent={
-          hasMore && products.length > 0 ? (
+          !showFavorites && hasMore && products.length > 0 ? (
             <ActivityIndicator style={styles.footerLoader} color={theme.colors.primary} />
           ) : null
         }
@@ -506,6 +556,22 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderWidth: 1,
     borderColor: '#eee',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 2,
+    elevation: 3,
   },
   productImage: {
     width: '100%',

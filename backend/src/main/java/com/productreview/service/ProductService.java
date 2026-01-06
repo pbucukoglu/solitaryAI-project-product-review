@@ -9,13 +9,16 @@ import com.productreview.entity.Review;
 import com.productreview.repository.ProductRepository;
 import com.productreview.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,7 +50,24 @@ public class ProductService {
             products = productRepository.findAll(pageable);
         }
         
-        return products.map(this::convertToDTO);
+        List<Product> content = products.getContent();
+        List<Long> productIds = content.stream().map(Product::getId).toList();
+
+        Map<Long, Aggregate> aggregates = new HashMap<>();
+        if (!productIds.isEmpty()) {
+            for (Object[] row : reviewRepository.findAggregatesByProductIds(productIds)) {
+                Long productId = (Long) row[0];
+                Double avg = (Double) row[1];
+                Long cnt = (Long) row[2];
+                aggregates.put(productId, new Aggregate(avg, cnt));
+            }
+        }
+
+        List<ProductDTO> dtoList = content.stream()
+                .map(product -> convertToDTO(product, aggregates.get(product.getId())))
+                .toList();
+
+        return new PageImpl<>(dtoList, pageable, products.getTotalElements());
     }
     
     public ProductDetailDTO getProductById(Long id) {
@@ -68,11 +88,11 @@ public class ProductService {
         }
     }
     
-    private ProductDTO convertToDTO(Product product) {
+    private ProductDTO convertToDTO(Product product, Aggregate aggregate) {
         List<String> imageUrls = parseImageUrls(product.getImageUrls());
 
-        Double avgRating = product.getAverageRating();
-        Long reviewCount = product.getReviewCount();
+        Double avgRating = aggregate != null ? aggregate.avgRating : 0.0;
+        Long reviewCount = aggregate != null ? aggregate.reviewCount : 0L;
         
         return new ProductDTO(
                 product.getId(),
@@ -90,8 +110,8 @@ public class ProductService {
         List<Review> reviews = reviewRepository.findByProductId(product.getId());
         List<String> imageUrls = parseImageUrls(product.getImageUrls());
 
-        Double avgRating = product.getAverageRating();
-        Long reviewCount = product.getReviewCount();
+        Double avgRating = reviewRepository.findAverageRatingByProductId(product.getId());
+        Long reviewCount = reviewRepository.countByProductId(product.getId());
         
         List<com.productreview.dto.ReviewDTO> reviewDTOs = reviews.stream()
                 .map(review -> new com.productreview.dto.ReviewDTO(
@@ -116,6 +136,8 @@ public class ProductService {
                 reviewDTOs
         );
     }
+
+    private record Aggregate(Double avgRating, Long reviewCount) {}
 }
 
 
