@@ -11,10 +11,23 @@ const api = axios.create({
 
 // Products API
 export const productService = {
-  getAll: async (page = 0, size = 20, sortBy = 'id', sortDir = 'ASC', category = null, search = null) => {
+  getAll: async (
+    page = 0,
+    size = 20,
+    sortBy = 'createdAt',
+    sortDir = 'DESC',
+    category = null,
+    search = null,
+    minRating = null,
+    minPrice = null,
+    maxPrice = null
+  ) => {
     const params = { page, size, sortBy, sortDir };
     if (category) params.category = category;
     if (search) params.search = search;
+    if (minRating !== null && minRating !== undefined) params.minRating = minRating;
+    if (minPrice !== null && minPrice !== undefined) params.minPrice = minPrice;
+    if (maxPrice !== null && maxPrice !== undefined) params.maxPrice = maxPrice;
     
     // DEBUG: Log API call
     console.log('🌐 [API] productService.getAll called with params:', params);

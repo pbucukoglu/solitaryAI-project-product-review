@@ -4,6 +4,7 @@ import com.productreview.entity.Product;
 import org.springframework.data.jpa.domain.Specification;
 
 import jakarta.persistence.criteria.Predicate;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +13,13 @@ public final class ProductSpecifications {
     private ProductSpecifications() {
     }
 
-    public static Specification<Product> categoryAndMultiTermSearch(String category, String search) {
+    public static Specification<Product> categoryAndMultiTermSearch(
+            String category,
+            String search,
+            Integer minRating,
+            BigDecimal minPrice,
+            BigDecimal maxPrice
+    ) {
         final String trimmed = search == null ? "" : search.trim();
         final String[] rawTerms = trimmed.split("\\s+");
 
@@ -33,6 +40,18 @@ public final class ProductSpecifications {
                 andPredicates.add(cb.equal(root.get("category"), category));
             }
 
+            if (minRating != null) {
+                andPredicates.add(cb.greaterThanOrEqualTo(cb.coalesce(root.get("averageRating"), 0.0), minRating.doubleValue()));
+            }
+
+            if (minPrice != null) {
+                andPredicates.add(cb.greaterThanOrEqualTo(root.get("price"), minPrice));
+            }
+
+            if (maxPrice != null) {
+                andPredicates.add(cb.lessThanOrEqualTo(root.get("price"), maxPrice));
+            }
+
             for (String term : terms) {
                 String like = "%" + term + "%";
                 Predicate nameLike = cb.like(cb.lower(root.get("name")), like);
@@ -45,5 +64,9 @@ public final class ProductSpecifications {
             }
             return cb.and(andPredicates.toArray(new Predicate[0]));
         };
+    }
+
+    public static Specification<Product> categoryAndMultiTermSearch(String category, String search) {
+        return categoryAndMultiTermSearch(category, search, null, null, null);
     }
 }

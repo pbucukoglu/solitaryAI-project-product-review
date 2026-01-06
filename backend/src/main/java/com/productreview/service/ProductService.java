@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,15 +32,24 @@ public class ProductService {
     private final ReviewRepository reviewRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
-    public Page<ProductDTO> getAllProducts(Pageable pageable, String category, String search) {
+    public Page<ProductDTO> getAllProducts(Pageable pageable, String category, String search, Integer minRating, BigDecimal minPrice, BigDecimal maxPrice) {
         Page<Product> products;
         
         boolean hasCategory = category != null && !category.isEmpty();
         boolean hasSearch = search != null && !search.isEmpty();
+        boolean hasMinRating = minRating != null;
+        boolean hasMinPrice = minPrice != null;
+        boolean hasMaxPrice = maxPrice != null;
         
-        if (hasSearch) {
+        if (hasSearch || hasMinRating || hasMinPrice || hasMaxPrice) {
             products = productRepository.findAll(
-                    ProductSpecifications.categoryAndMultiTermSearch(hasCategory ? category : null, search),
+                    ProductSpecifications.categoryAndMultiTermSearch(
+                            hasCategory ? category : null,
+                            search,
+                            minRating,
+                            minPrice,
+                            maxPrice
+                    ),
                     pageable
             );
         } else if (hasCategory) {

@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import {
+  Animated,
   View,
   Text,
   FlatList,
@@ -35,12 +36,46 @@ const ProductListScreen = ({ navigation }) => {
   const [loadError, setLoadError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [sortBy, setSortBy] = useState('id');
-  const [sortDir, setSortDir] = useState('ASC');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortDir, setSortDir] = useState('DESC');
   const [showFilters, setShowFilters] = useState(false);
   const [categories] = useState(['Electronics', 'Clothing', 'Books', 'Home & Kitchen', 'Sports & Outdoors']);
   const [favoriteIds, setFavoriteIds] = useState(new Set());
   const [showFavorites, setShowFavorites] = useState(false);
+  const [minRating, setMinRating] = useState(null);
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+
+  const [favoritesToggleWidth, setFavoritesToggleWidth] = useState(0);
+  const favoritesIndicatorX = useRef(new Animated.Value(0)).current;
+
+  const sortOptions = useMemo(
+    () => [
+      { label: 'Newest', sortBy: 'createdAt', sortDir: 'DESC' },
+      { label: 'Price: Low to High', sortBy: 'price', sortDir: 'ASC' },
+      { label: 'Price: High to Low', sortBy: 'price', sortDir: 'DESC' },
+      { label: 'Rating: High to Low', sortBy: 'averageRating', sortDir: 'DESC' },
+      { label: 'Name: A–Z', sortBy: 'name', sortDir: 'ASC' },
+    ],
+    []
+  );
+
+  const selectedSortLabel = useMemo(() => {
+    const found = sortOptions.find((s) => s.sortBy === sortBy && s.sortDir === sortDir);
+    if (found) return found.label;
+    return 'Custom';
+  }, [sortBy, sortDir, sortOptions]);
+
+  useEffect(() => {
+    if (!favoritesToggleWidth) return;
+    const segmentWidth = favoritesToggleWidth / 2;
+    Animated.spring(favoritesIndicatorX, {
+      toValue: showFavorites ? segmentWidth : 0,
+      useNativeDriver: true,
+      speed: 20,
+      bounciness: 6,
+    }).start();
+  }, [showFavorites, favoritesToggleWidth, favoritesIndicatorX]);
 
   const loadWishlist = React.useCallback(async () => {
     try {
@@ -69,7 +104,10 @@ const ProductListScreen = ({ navigation }) => {
         sortBy,
         sortDir,
         selectedCategory,
-        searchQuery
+        searchQuery,
+        minRating,
+        minPrice,
+        maxPrice,
       };
       
       // DEBUG: Log what we're sending to API
@@ -81,24 +119,36 @@ const ProductListScreen = ({ navigation }) => {
           sortBy: filters.sortBy,
           sortDir: filters.sortDir,
           category: filters.selectedCategory,
-          search: filters.searchQuery
+          search: filters.searchQuery,
+          minRating: filters.minRating,
+          minPrice: filters.minPrice,
+          maxPrice: filters.maxPrice,
         },
         currentState: {
           sortBy,
           sortDir,
           selectedCategory,
-          searchQuery
+          searchQuery,
+          minRating,
+          minPrice,
+          maxPrice,
         }
       };
       console.log('🔍 [ProductList] loadProducts called with:', JSON.stringify(debugInfo, null, 2));
       
+      const minPriceNumber = filters.minPrice && filters.minPrice.trim().length > 0 ? Number(filters.minPrice) : null;
+      const maxPriceNumber = filters.maxPrice && filters.maxPrice.trim().length > 0 ? Number(filters.maxPrice) : null;
+
       const response = await productService.getAll(
         pageNum, 
         20, 
         filters.sortBy, 
         filters.sortDir, 
         filters.selectedCategory, 
-        filters.searchQuery || null
+        filters.searchQuery || null,
+        filters.minRating,
+        Number.isFinite(minPriceNumber) ? minPriceNumber : null,
+        Number.isFinite(maxPriceNumber) ? maxPriceNumber : null
       );
       
       // DEBUG: Log response
@@ -128,7 +178,7 @@ const ProductListScreen = ({ navigation }) => {
   };
 
   // Track previous values to detect changes
-  const prevFiltersRef = useRef({ selectedCategory: null, sortBy: 'id', sortDir: 'ASC', searchQuery: '' });
+  const prevFiltersRef = useRef({ selectedCategory: null, sortBy: 'createdAt', sortDir: 'DESC', searchQuery: '', minRating: null, minPrice: '', maxPrice: '' });
   const isFirstMount = useRef(true);
   
   // Initial load on mount
@@ -155,7 +205,10 @@ const ProductListScreen = ({ navigation }) => {
       selectedCategory: selectedCategory,  // Fixed: use selectedCategory instead of category
       sortBy: sortBy,
       sortDir: sortDir,
-      searchQuery: searchQuery || ''  // Fixed: use searchQuery instead of search
+      searchQuery: searchQuery || '',  // Fixed: use searchQuery instead of search
+      minRating: minRating,
+      minPrice: minPrice,
+      maxPrice: maxPrice,
     };
 
     // Check if filters actually changed
@@ -163,7 +216,10 @@ const ProductListScreen = ({ navigation }) => {
       prevFiltersRef.current.selectedCategory !== currentFilters.selectedCategory ||
       prevFiltersRef.current.sortBy !== currentFilters.sortBy ||
       prevFiltersRef.current.sortDir !== currentFilters.sortDir ||
-      prevFiltersRef.current.searchQuery !== currentFilters.searchQuery;
+      prevFiltersRef.current.searchQuery !== currentFilters.searchQuery ||
+      prevFiltersRef.current.minRating !== currentFilters.minRating ||
+      prevFiltersRef.current.minPrice !== currentFilters.minPrice ||
+      prevFiltersRef.current.maxPrice !== currentFilters.maxPrice;
 
     if (!filtersChanged) {
       return; // No change, skip
@@ -195,7 +251,7 @@ const ProductListScreen = ({ navigation }) => {
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory, sortBy, sortDir, searchQuery]);
+  }, [selectedCategory, sortBy, sortDir, searchQuery, minRating, minPrice, maxPrice]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -219,13 +275,9 @@ const ProductListScreen = ({ navigation }) => {
     setPage(0);
   };
 
-  const handleSort = (field) => {
-    if (sortBy === field) {
-      setSortDir(sortDir === 'ASC' ? 'DESC' : 'ASC');
-    } else {
-      setSortBy(field);
-      setSortDir('ASC');
-    }
+  const handleSort = (option) => {
+    setSortBy(option.sortBy);
+    setSortDir(option.sortDir);
     setPage(0);
   };
 
@@ -304,22 +356,51 @@ const ProductListScreen = ({ navigation }) => {
           returnKeyType="search"
           placeholderTextColor={theme.colors.textSecondary}
         />
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.filterButton, { backgroundColor: theme.colors.primary }]}
           onPress={() => setShowFilters(true)}
         >
-          <Text style={styles.filterButtonText}>🔍 Filters</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.filterButton, { backgroundColor: showFavorites ? theme.colors.primary : theme.colors.surfaceAlt, marginLeft: 10, borderWidth: 1, borderColor: theme.colors.border }]}
-          onPress={() => setShowFavorites((v) => !v)}
-        >
-          <Text style={[styles.filterButtonText, { color: showFavorites ? '#fff' : theme.colors.text }]}>♥ Favorites</Text>
+          <Text style={styles.filterButtonText}>Filters</Text>
         </TouchableOpacity>
       </View>
 
+      <View style={[styles.favoritesToggleRow, { backgroundColor: theme.colors.surface }]}> 
+        <View
+          style={[styles.favoritesToggleContainer, { backgroundColor: theme.colors.surfaceAlt, borderColor: theme.colors.border }]}
+          onLayout={(e) => setFavoritesToggleWidth(e.nativeEvent.layout.width)}
+        >
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.favoritesToggleIndicator,
+              {
+                width: favoritesToggleWidth ? favoritesToggleWidth / 2 : '50%',
+                backgroundColor: theme.colors.primary,
+                transform: [{ translateX: favoritesIndicatorX }],
+              },
+            ]}
+          />
+
+          <TouchableOpacity
+            style={styles.favoritesToggle}
+            onPress={() => setShowFavorites(false)}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.favoritesToggleText, { color: !showFavorites ? '#fff' : theme.colors.text }]}>All</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.favoritesToggle}
+            onPress={() => setShowFavorites(true)}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.favoritesToggleText, { color: showFavorites ? '#fff' : theme.colors.text }]}>Favorites</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {/* Active Filters */}
-      {(selectedCategory || sortBy !== 'id' || sortDir !== 'ASC') && (
+      {(selectedCategory || minRating !== null || minPrice || maxPrice || sortBy !== 'createdAt' || sortDir !== 'DESC') && (
         <View style={[styles.activeFilters, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
           {selectedCategory && (
             <View style={[styles.filterChip, { backgroundColor: theme.colors.surfaceAlt, borderColor: theme.colors.border }]}>
@@ -329,12 +410,28 @@ const ProductListScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           )}
+          {minRating !== null && (
+            <View style={[styles.filterChip, { backgroundColor: theme.colors.surfaceAlt, borderColor: theme.colors.border }]}>
+              <Text style={[styles.filterChipText, { color: theme.colors.text }]}>Min rating: {minRating}+</Text>
+              <TouchableOpacity onPress={() => setMinRating(null)}>
+                <Text style={[styles.filterChipClose, { color: theme.colors.text }]}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          {(minPrice || maxPrice) && (
+            <View style={[styles.filterChip, { backgroundColor: theme.colors.surfaceAlt, borderColor: theme.colors.border }]}>
+              <Text style={[styles.filterChipText, { color: theme.colors.text }]}>Price: {minPrice || '0'} - {maxPrice || '∞'}</Text>
+              <TouchableOpacity onPress={() => { setMinPrice(''); setMaxPrice(''); }}>
+                <Text style={[styles.filterChipClose, { color: theme.colors.text }]}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           <View style={[styles.filterChip, { backgroundColor: theme.colors.surfaceAlt, borderColor: theme.colors.border }]}
           >
             <Text style={[styles.filterChipText, { color: theme.colors.text }]}>
-              Sort: {sortBy} ({sortDir})
+              Sort: {selectedSortLabel}
             </Text>
-            <TouchableOpacity onPress={() => { setSortBy('id'); setSortDir('ASC'); }}>
+            <TouchableOpacity onPress={() => { setSortBy('createdAt'); setSortDir('DESC'); }}>
               <Text style={[styles.filterChipClose, { color: theme.colors.text }]}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -429,26 +526,72 @@ const ProductListScreen = ({ navigation }) => {
               {/* Sort Options */}
               <View style={styles.filterSection}>
                 <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Sort By</Text>
-                {['id', 'name', 'price', 'createdAt'].map((field) => (
+                {sortOptions.map((option) => (
                   <TouchableOpacity
-                    key={field}
+                    key={`${option.sortBy}-${option.sortDir}`}
                     style={[
                       styles.sortOption,
                       { borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceAlt },
-                      sortBy === field && [styles.sortOptionActive, { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary }]
+                      sortBy === option.sortBy && sortDir === option.sortDir && [styles.sortOptionActive, { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary }]
                     ]}
-                    onPress={() => handleSort(field)}
+                    onPress={() => handleSort(option)}
                   >
                     <Text style={[
                       styles.sortOptionText,
                       { color: theme.colors.text },
-                      sortBy === field && styles.sortOptionTextActive
+                      sortBy === option.sortBy && sortDir === option.sortDir && styles.sortOptionTextActive
                     ]}>
-                      {field === 'id' ? 'Default' : field.charAt(0).toUpperCase() + field.slice(1)}
-                      {sortBy === field && ` (${sortDir})`}
+                      {option.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
+              </View>
+
+              <View style={styles.filterSection}>
+                <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Minimum Rating</Text>
+                <View style={styles.categoryContainer}>
+                  {[4, 3, 2, 1].map((r) => (
+                    <TouchableOpacity
+                      key={`minrating-${r}`}
+                      style={[
+                        styles.categoryChip,
+                        { borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceAlt },
+                        minRating === r && [styles.categoryChipActive, { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary }]
+                      ]}
+                      onPress={() => setMinRating(minRating === r ? null : r)}
+                    >
+                      <Text style={[
+                        styles.categoryChipText,
+                        { color: theme.colors.text },
+                        minRating === r && styles.categoryChipTextActive
+                      ]}>
+                        {r}+
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.filterSection}>
+                <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Price Range</Text>
+                <View style={styles.priceRow}>
+                  <TextInput
+                    style={[styles.priceInput, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceAlt }]}
+                    value={minPrice}
+                    onChangeText={setMinPrice}
+                    keyboardType="numeric"
+                    placeholder="Min"
+                    placeholderTextColor={theme.colors.textSecondary}
+                  />
+                  <TextInput
+                    style={[styles.priceInput, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceAlt }]}
+                    value={maxPrice}
+                    onChangeText={setMaxPrice}
+                    keyboardType="numeric"
+                    placeholder="Max"
+                    placeholderTextColor={theme.colors.textSecondary}
+                  />
+                </View>
               </View>
             </ScrollView>
 
@@ -510,6 +653,34 @@ const styles = StyleSheet.create({
   filterButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  favoritesToggleRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  favoritesToggleContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  favoritesToggleIndicator: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    borderRadius: 14,
+  },
+  favoritesToggle: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  favoritesToggleText: {
+    fontWeight: '800',
   },
   activeFilters: {
     flexDirection: 'row',
@@ -687,6 +858,18 @@ const styles = StyleSheet.create({
   categoryContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  priceInput: {
+    width: '48%',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    fontSize: 14,
   },
   categoryChip: {
     paddingHorizontal: 16,
