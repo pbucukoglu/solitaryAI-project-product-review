@@ -12,6 +12,14 @@ const api = axios.create({
 
 const liveProductIdCacheByDemoId = new Map();
 
+const normalizeProductName = (name) => {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[^a-z0-9 ]/g, '')
+    .trim();
+};
+
 const resolveLiveProductIdFromDemoProduct = async (demoProduct) => {
   if (!demoProduct) return null;
   const demoId = demoProduct?.id;
@@ -20,36 +28,64 @@ const resolveLiveProductIdFromDemoProduct = async (demoProduct) => {
   }
 
   const baseUrl = await demoService.getBaseUrl();
-  const search = (demoProduct?.name || '').trim();
-  if (!search) return null;
+  const rawName = (demoProduct?.name || '').trim();
+  if (!rawName) return null;
+  const normalizedName = normalizeProductName(rawName);
+  const sanitizedSearch = rawName.replace(/["'`]/g, '').trim();
 
-  const params = { page: 0, size: 10, search };
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  const tryFetchJson = async (url) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    try {
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) return null;
+      return await response.json();
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
 
   try {
-    const response = await fetch(`${baseUrl}${API_ENDPOINTS.PRODUCTS}?${new URLSearchParams(params).toString()}`, {
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) return null;
-    const data = await response.json();
-    const match = Array.isArray(data?.content)
-      ? data.content.find((p) => (p?.name || '').toLowerCase() === search.toLowerCase()) || data.content[0]
-      : null;
-
-    const liveId = match?.id ?? null;
-    if (demoId !== null && demoId !== undefined && liveId !== null && liveId !== undefined) {
-      liveProductIdCacheByDemoId.set(demoId, liveId);
+    // 1) Try search endpoint first (sanitized for better LIKE matching)
+    if (sanitizedSearch) {
+      const params = { page: 0, size: 20, search: sanitizedSearch };
+      const data = await tryFetchJson(`${baseUrl}${API_ENDPOINTS.PRODUCTS}?${new URLSearchParams(params).toString()}`);
+      const match = Array.isArray(data?.content)
+        ? data.content.find((p) => normalizeProductName(p?.name) === normalizedName) || data.content[0]
+        : null;
+      const liveId = match?.id ?? null;
+      if (demoId !== null && demoId !== undefined && liveId !== null && liveId !== undefined) {
+        liveProductIdCacheByDemoId.set(demoId, liveId);
+      }
+      if (liveId) return liveId;
     }
-    return liveId;
+
+    // 2) Fallback: fetch a larger list (covers full seeded dataset in this project)
+    const listData = await tryFetchJson(
+      `${baseUrl}${API_ENDPOINTS.PRODUCTS}?${new URLSearchParams({ page: 0, size: 200 }).toString()}`
+    );
+    const listMatch = Array.isArray(listData?.content)
+      ? listData.content.find((p) => normalizeProductName(p?.name) === normalizedName)
+      : null;
+    const fallbackLiveId = listMatch?.id ?? null;
+    if (demoId !== null && demoId !== undefined && fallbackLiveId !== null && fallbackLiveId !== undefined) {
+      liveProductIdCacheByDemoId.set(demoId, fallbackLiveId);
+    }
+
+    if (!fallbackLiveId) {
+      console.log('🌐 [API] Could not resolve demo product to live ID:', { demoId, rawName });
+    }
+
+    return fallbackLiveId;
   } catch {
     return null;
-  } finally {
-    clearTimeout(timeoutId);
   }
 };
 
