@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useColorScheme } from 'react-native';
 
+import { ThemeContext } from './context/ThemeContext';
 import { createTheme } from './components/theme';
 
 import ProductListScreen from './screens/ProductListScreen';
@@ -43,7 +44,8 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={navTheme}>
+      <ThemeContext.Provider value={{ theme: appTheme }}>
+        <NavigationContainer theme={navTheme}>
         <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
         <Stack.Navigator
           initialRouteName="ProductList"
@@ -78,7 +80,8 @@ export default function App() {
             options={{ title: 'Settings' }}
           />
         </Stack.Navigator>
-      </NavigationContainer>
+        </NavigationContainer>
+      </ThemeContext.Provider>
     </SafeAreaProvider>
   );
 }
