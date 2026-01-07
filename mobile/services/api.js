@@ -10,6 +10,49 @@ const api = axios.create({
   timeout: 30000, // Increased to 30 seconds for network issues
 });
 
+const liveProductIdCacheByDemoId = new Map();
+
+const resolveLiveProductIdFromDemoProduct = async (demoProduct) => {
+  if (!demoProduct) return null;
+  const demoId = demoProduct?.id;
+  if (demoId !== null && demoId !== undefined && liveProductIdCacheByDemoId.has(demoId)) {
+    return liveProductIdCacheByDemoId.get(demoId);
+  }
+
+  const baseUrl = await demoService.getBaseUrl();
+  const search = (demoProduct?.name || '').trim();
+  if (!search) return null;
+
+  const params = { page: 0, size: 10, search };
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const response = await fetch(`${baseUrl}${API_ENDPOINTS.PRODUCTS}?${new URLSearchParams(params).toString()}`, {
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    const match = Array.isArray(data?.content)
+      ? data.content.find((p) => (p?.name || '').toLowerCase() === search.toLowerCase()) || data.content[0]
+      : null;
+
+    const liveId = match?.id ?? null;
+    if (demoId !== null && demoId !== undefined && liveId !== null && liveId !== undefined) {
+      liveProductIdCacheByDemoId.set(demoId, liveId);
+    }
+    return liveId;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
+
 // Products API
 export const productService = {
   getAll: async (
@@ -106,6 +149,30 @@ export const productService = {
         return data;
       }
       if (response.status === 404) {
+        // Demo IDs may not match production DB IDs (e.g. fresh seed). Try resolving by name.
+        const resolvedLiveId = await resolveLiveProductIdFromDemoProduct(demoData);
+        if (resolvedLiveId) {
+          const retryController = new AbortController();
+          const retryTimeoutId = setTimeout(() => retryController.abort(), 5000);
+          try {
+            const retryResponse = await fetch(`${baseUrl}${API_ENDPOINTS.PRODUCTS}/${resolvedLiveId}`, {
+              signal: retryController.signal,
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+
+            if (retryResponse.ok) {
+              const retryData = await retryResponse.json();
+              console.log('✅ [API] Resolved demo product to live ID - switching to live data');
+              await demoService.setDemoMode(false);
+              return retryData;
+            }
+          } finally {
+            clearTimeout(retryTimeoutId);
+          }
+        }
+
         throw new Error('Product not found');
       }
     } catch (error) {
@@ -326,6 +393,29 @@ export const reviewService = {
         return data;
       }
       if (response.status === 404) {
+        // Demo product IDs may not exist in production DB; resolve and retry.
+        const resolvedLiveId = await resolveLiveProductIdFromDemoProduct(demoReviews);
+        if (resolvedLiveId) {
+          const retryResponse = await Promise.race([
+            fetch(
+              `${baseUrl}${API_ENDPOINTS.REVIEWS}/product/${resolvedLiveId}?${new URLSearchParams(params).toString()}`,
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              }
+            ),
+            timeoutPromise,
+          ]);
+
+          if (retryResponse.ok) {
+            const retryData = await retryResponse.json();
+            console.log('✅ [API] Resolved demo product to live ID for reviews - switching to live data');
+            await demoService.setDemoMode(false);
+            return retryData;
+          }
+        }
+
         throw new Error('Product not found');
       }
     } catch (error) {
