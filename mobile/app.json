@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Product Review",
-    "slug": "product-review-app",
+    "name": "Claro",
+    "slug": "claro-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,25 +16,18 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.productreview.app"
+      "bundleIdentifier": "com.reportnami.claro"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.productreview.app",
+      "package": "com.reportnami.claro",
       "permissions": [
         "INTERNET"
       ]
     },
-    "extra": {
-      "apiUrl": "http://YOUR_PRODUCTION_API_URL:8080"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "web": {}
   }
 }
-
-
