@@ -130,10 +130,14 @@ export const productService = {
     // Try live API in background
     try {
       const baseUrl = await demoService.getBaseUrl();
+
+      const resolvedLiveId = await resolveLiveProductIdFromDemoProduct(demoData);
+      const effectiveId = resolvedLiveId || id;
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
       
-      const response = await fetch(`${baseUrl}${API_ENDPOINTS.PRODUCTS}/${id}`, {
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.PRODUCTS}/${effectiveId}`, {
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
@@ -148,32 +152,8 @@ export const productService = {
         await demoService.setDemoMode(false);
         return data;
       }
-      if (response.status === 404) {
-        // Demo IDs may not match production DB IDs (e.g. fresh seed). Try resolving by name.
-        const resolvedLiveId = await resolveLiveProductIdFromDemoProduct(demoData);
-        if (resolvedLiveId) {
-          const retryController = new AbortController();
-          const retryTimeoutId = setTimeout(() => retryController.abort(), 5000);
-          try {
-            const retryResponse = await fetch(`${baseUrl}${API_ENDPOINTS.PRODUCTS}/${resolvedLiveId}`, {
-              signal: retryController.signal,
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
-
-            if (retryResponse.ok) {
-              const retryData = await retryResponse.json();
-              console.log('✅ [API] Resolved demo product to live ID - switching to live data');
-              await demoService.setDemoMode(false);
-              return retryData;
-            }
-          } finally {
-            clearTimeout(retryTimeoutId);
-          }
-        }
-
-        throw new Error('Product not found');
+      if (!response.ok) {
+        throw new Error(response.status === 404 ? 'Product not found' : `HTTP_${response.status}`);
       }
     } catch (error) {
       console.log('🌐 [API] Live API failed for product detail, keeping demo data:', error.message);
@@ -356,6 +336,10 @@ export const reviewService = {
     // Try live API in background
     try {
       const baseUrl = await demoService.getBaseUrl();
+
+      const resolvedLiveId = await resolveLiveProductIdFromDemoProduct(demoReviews);
+      const effectiveProductId = resolvedLiveId || productId;
+
       const params = { page, size, sortBy, sortDir };
       if (minRating !== null && minRating !== undefined) {
         params.minRating = minRating;
@@ -363,10 +347,10 @@ export const reviewService = {
 
       // DEBUG: Log API call
       try {
-        console.log('🌐 [API] reviewService.getByProductId called with params:', { productId, ...params });
+        console.log('🌐 [API] reviewService.getByProductId called with params:', { productId: effectiveProductId, ...params });
         console.log(
           '🌐 [API] Full URL will be:',
-          `${baseUrl}${API_ENDPOINTS.REVIEWS}/product/${productId}?${new URLSearchParams(params).toString()}`
+          `${baseUrl}${API_ENDPOINTS.REVIEWS}/product/${effectiveProductId}?${new URLSearchParams(params).toString()}`
         );
       } catch {
         // no-op (avoid crashing on logging)
@@ -378,7 +362,7 @@ export const reviewService = {
       );
 
       const response = await Promise.race([
-        fetch(`${baseUrl}${API_ENDPOINTS.REVIEWS}/product/${productId}?${new URLSearchParams(params).toString()}`, {
+        fetch(`${baseUrl}${API_ENDPOINTS.REVIEWS}/product/${effectiveProductId}?${new URLSearchParams(params).toString()}`, {
           headers: {
             'Content-Type': 'application/json',
           },
@@ -392,32 +376,7 @@ export const reviewService = {
         await demoService.setDemoMode(false);
         return data;
       }
-      if (response.status === 404) {
-        // Demo product IDs may not exist in production DB; resolve and retry.
-        const resolvedLiveId = await resolveLiveProductIdFromDemoProduct(demoReviews);
-        if (resolvedLiveId) {
-          const retryResponse = await Promise.race([
-            fetch(
-              `${baseUrl}${API_ENDPOINTS.REVIEWS}/product/${resolvedLiveId}?${new URLSearchParams(params).toString()}`,
-              {
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-              }
-            ),
-            timeoutPromise,
-          ]);
-
-          if (retryResponse.ok) {
-            const retryData = await retryResponse.json();
-            console.log('✅ [API] Resolved demo product to live ID for reviews - switching to live data');
-            await demoService.setDemoMode(false);
-            return retryData;
-          }
-        }
-
-        throw new Error('Product not found');
-      }
+      throw new Error(response.status === 404 ? 'Product not found' : `HTTP_${response.status}`);
     } catch (error) {
       console.log('🌐 [API] Live reviews failed, keeping demo reviews:', error.message);
       await demoService.setDemoMode(true);
