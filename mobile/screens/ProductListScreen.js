@@ -447,7 +447,11 @@ const ProductListScreen = ({ navigation }) => {
         />
       ) : (
         <FlatList
-        data={showFavorites ? products.filter((p) => favoriteIds.has(p.id)) : products}
+        data={
+          showFavorites
+            ? products.filter((p) => favoriteIds.has(p.id))
+            : products
+        }
         renderItem={renderProduct}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.list}
@@ -467,7 +471,11 @@ const ProductListScreen = ({ navigation }) => {
               </>
             ) : (
               <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-                {showFavorites ? 'No favorites yet' : 'No products found'}
+                {showFavorites
+                  ? (products.some((p) => favoriteIds.has(p.id))
+                      ? 'No favorites match your filters'
+                      : 'No favorites yet')
+                  : 'No products found'}
               </Text>
             )}
           </View>
