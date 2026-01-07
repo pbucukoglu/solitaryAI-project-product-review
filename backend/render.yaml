@@ -15,6 +15,8 @@ services:
         value: product_review_db_user
       - key: SPRING_DATASOURCE_PASSWORD
         value: K8KWwscan1y6hjb4z60d1RhAptl1Axlt
+      - key: PORT
+        value: 8080
 
 databases:
   - name: product-review-db

@@ -21,7 +21,7 @@ WORKDIR /app
 # Copy the built jar
 COPY --from=build /app/target/product-review-backend-0.0.1-SNAPSHOT.jar app.jar
 
-# Expose port
+# Expose port (Render.com uses PORT env var)
 EXPOSE 8080
 
 # Run the application
