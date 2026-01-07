@@ -71,7 +71,7 @@ const SettingsScreen = ({ navigation }) => {
   };
 
   const resetToDefault = async () => {
-    const defaultUrl = 'http://localhost:8080';
+    const defaultUrl = 'https://solitaryai-project-product-review-production.up.railway.app';
     await demoService.setBaseUrl(defaultUrl);
     setBaseUrl(defaultUrl);
     setTempBaseUrl(defaultUrl);

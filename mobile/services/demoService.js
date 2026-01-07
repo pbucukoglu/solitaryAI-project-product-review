@@ -5,7 +5,7 @@ const DEMO_MODE_KEY = '@demo_mode_active';
 const BASE_URL_KEY = '@base_url';
 
 // Default base URL (can be overridden in settings)
-const DEFAULT_BASE_URL = 'http://localhost:8080';
+const DEFAULT_BASE_URL = 'https://solitaryai-project-product-review-production.up.railway.app';
 
 export const demoService = {
   // Check if we should use demo mode
