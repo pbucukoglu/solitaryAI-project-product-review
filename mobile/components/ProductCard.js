@@ -79,7 +79,10 @@ const ProductCard = ({
   return (
     <Animated.View style={[entranceStyle, style]}>
       <Pressable
-        onPress={onPress}
+        onPress={() => {
+          console.log(' [ProductCard] onPress triggered for item:', JSON.stringify(item, null, 2));
+          onPress(item);
+        }}
         style={({ pressed }) => [
           styles.card,
           {

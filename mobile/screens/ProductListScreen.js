@@ -141,6 +141,7 @@ const ProductListScreen = ({ navigation }) => {
   const loadWishlist = React.useCallback(async () => {
     try {
       const ids = await wishlistService.getIds();
+      console.log('🔍 [ProductList] Loaded favorite IDs:', ids);
       setFavoriteIds(new Set(ids));
     } catch (e) {
       console.error('Error loading wishlist:', e);
@@ -158,7 +159,7 @@ const ProductListScreen = ({ navigation }) => {
 
   const buildFavoriteList = useCallback((allItems, idsSet, filters) => {
     const ids = idsSet instanceof Set ? idsSet : new Set(idsSet || []);
-    let list = (allItems || []).filter((p) => ids.has(p?.id));
+    let list = (allItems || []).filter((p) => ids.has(p?.id) && p.id !== null && p.id !== undefined);
 
     if (filters?.selectedCategory) {
       list = list.filter((p) => p?.category === filters.selectedCategory);
@@ -227,7 +228,12 @@ const ProductListScreen = ({ navigation }) => {
       );
 
       const merged = results.filter(Boolean);
-      setFavoriteProducts(buildFavoriteList(merged, new Set(ids), filters));
+      const validMerged = merged.filter(p => p.id !== null && p.id !== undefined);
+      console.log('🔍 [ProductList] Favorite products with valid IDs:', validMerged.length);
+      console.log('🔍 [ProductList] Favorite products with valid IDs data:', JSON.stringify(validMerged, null, 2));
+      const validProducts = buildFavoriteList(validMerged, new Set(ids), filters);
+      console.log('🔍 [ProductList] Setting products with valid IDs only, count:', validProducts.length, 'products:', JSON.stringify(validProducts, null, 2));
+      setFavoriteProducts(validProducts);
     } catch (e) {
       console.error('Error loading favorite products:', e);
       setFavoriteProducts([]);
@@ -313,10 +319,13 @@ const ProductListScreen = ({ navigation }) => {
             seen.add(id);
             deduped.push(p);
           }
+          console.log('🔍 [ProductList] Setting products with valid IDs only, count:', deduped.length, 'products:', JSON.stringify(deduped, null, 2));
           return deduped;
         });
       } else {
-        setProducts(response.content);
+        const validProducts = response.content.filter(p => p.id !== null && p.id !== undefined);
+        console.log('🔍 [ProductList] Setting products with valid IDs only, count:', validProducts.length, 'products:', JSON.stringify(validProducts, null, 2));
+        setProducts(validProducts);
       }
 
       if (showFavorites) {
@@ -469,6 +478,7 @@ const ProductListScreen = ({ navigation }) => {
   }, [navigation]);
 
   const renderProduct = ({ item, index }) => {
+    console.log('🔍 [ProductList] Rendering product item at index', index, 'with data:', JSON.stringify(item, null, 2));
     const isFavorite = favoriteIds.has(item.id);
 
     return (
@@ -610,14 +620,14 @@ const ProductListScreen = ({ navigation }) => {
         <FlatList
           data={[0, 1, 2, 3, 4]}
           renderItem={renderSkeletonItem}
-          keyExtractor={(item) => `s-${item}`}
+          keyExtractor={(item, index) => String(item?.id || `fallback-${index}`)}
           contentContainerStyle={styles.list}
         />
       ) : (
         <FlatList
         data={showFavorites ? favoriteProducts : products}
         renderItem={renderProduct}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item, index) => String(item?.id || `fallback-${index}`)}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />

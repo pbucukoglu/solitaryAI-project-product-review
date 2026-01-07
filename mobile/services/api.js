@@ -58,14 +58,20 @@ export const productService = {
     // DEBUG: Log API call
     console.log('🌐 [API] productService.getAll called with params:', params);
     console.log('🌐 [API] Full URL will be:', `${API_BASE_URL}${API_ENDPOINTS.PRODUCTS}?${new URLSearchParams(params).toString()}`);
-    return await fetchJsonWithTimeout(
+    const response = await fetchJsonWithTimeout(
       `${API_BASE_URL}${API_ENDPOINTS.PRODUCTS}?${new URLSearchParams(params).toString()}`,
       { method: 'GET' },
       15000
     );
+    console.log('🌐 [API] productService.getAll response content:', JSON.stringify(response.content || response, null, 2));
+    return response;
   },
   
   getById: async (id) => {
+    if (!id) {
+      console.error('🔍 [API] Error: productService.getById called with undefined id');
+      throw new Error('Not found');
+    }
     return await fetchJsonWithTimeout(`${API_BASE_URL}${API_ENDPOINTS.PRODUCTS}/${id}`, { method: 'GET' }, 15000);
   },
 };

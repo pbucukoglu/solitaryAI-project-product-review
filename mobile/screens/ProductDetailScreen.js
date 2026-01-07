@@ -86,6 +86,13 @@ const ProductDetailScreen = ({ route, navigation }) => {
   }, [productId]);
 
   const loadReviews = React.useCallback(async ({ page = 0, append = false } = {}) => {
+    if (!productId) {
+      console.error('🔍 [ProductDetail] Error: productId is undefined, cannot load reviews.');
+      setReviewsError('Invalid product selection.');
+      setReviewsLoading(false);
+      setReviewsLoadingMore(false);
+      return;
+    }
     try {
       setReviewsError(null);
       if (append) {
@@ -209,10 +216,11 @@ const ProductDetailScreen = ({ route, navigation }) => {
   // Reload product details when screen comes into focus (e.g., after adding a review)
   useFocusEffect(
     React.useCallback(() => {
+      console.log('🔍 [ProductDetail] useFocusEffect triggered, productId:', productId);
       refreshAll();
       loadFavoriteState();
       loadDeviceId();
-    }, [refreshAll, loadFavoriteState, loadDeviceId])
+    }, [refreshAll, loadFavoriteState, loadDeviceId, productId])
   );
 
   useEffect(() => {

@@ -18,9 +18,15 @@ const safeParse = (raw) => {
 
 export const wishlistService = {
   getIds: async () => {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return safeParse(raw);
+    try {
+      const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
+      const ids = jsonValue != null ? safeParse(jsonValue) : [];
+      console.log('🔍 [WishlistService] Retrieved wishlist IDs:', ids);
+      return ids;
+    } catch (e) {
+      console.error('Error getting wishlist IDs:', e);
+      return [];
+    }
   },
 
   setIds: async (ids) => {
