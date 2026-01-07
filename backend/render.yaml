@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: product-review-api
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DATABASE_URL
+        value: postgresql://product_review_db_user:K8KWwscan1y6hjb4z60d1RhAptl1Axlt@dpg-d5f7b6shg0os7380c4cg-a/product_review_db
+      - key: SPRING_DATASOURCE_URL
+        value: postgresql://product_review_db_user:K8KWwscan1y6hjb4z60d1RhAptl1Axlt@dpg-d5f7b6shg0os7380c4cg-a/product_review_db
+      - key: SPRING_DATASOURCE_USERNAME
+        value: product_review_db_user
+      - key: SPRING_DATASOURCE_PASSWORD
+        value: K8KWwscan1y6hjb4z60d1RhAptl1Axlt
+
+databases:
+  - name: product-review-db
+    plan: free
