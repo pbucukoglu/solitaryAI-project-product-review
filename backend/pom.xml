@@ -22,20 +22,6 @@
         <java.version>17</java.version>
     </properties>
     
-    <!-- Render.com deployment -->
-    <build>
-        <finalName>product-review-backend-0.0.1-SNAPSHOT</finalName>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>com.productreview.ProductReviewApplication</mainClass>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-    
     <dependencies>
         <!-- Spring Boot Web -->
         <dependency>
