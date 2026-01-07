@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Image, StyleSheet, Dimensions, ActivityIndicator, Text } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
+import { View, Image, StyleSheet, Dimensions, ActivityIndicator, Text, ScrollView } from 'react-native';
 import Skeleton from './Skeleton';
 
 const { width: screenWidth } = Dimensions.get('window');
