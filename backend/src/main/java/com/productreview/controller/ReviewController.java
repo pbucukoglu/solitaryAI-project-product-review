@@ -1,6 +1,7 @@
 package com.productreview.controller;
 
 import com.productreview.dto.CreateReviewDTO;
+import com.productreview.dto.HelpfulVoteResponseDTO;
 import com.productreview.dto.ReviewDTO;
 import com.productreview.dto.UpdateReviewDTO;
 import com.productreview.service.ReviewService;
@@ -85,14 +86,34 @@ public class ReviewController {
             @RequestParam(defaultValue = "DESC") String sortDir,
             @RequestParam(required = false) Integer minRating
     ) {
-        Sort sort = sortDir.equalsIgnoreCase("ASC") 
-                ? Sort.by(sortBy).ascending() 
+        Sort primary = sortDir.equalsIgnoreCase("ASC")
+                ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
+
+        Sort sort = "helpfulCount".equals(sortBy)
+                ? primary.and(Sort.by("createdAt").descending())
+                : primary;
         Pageable pageable = PageRequest.of(page, size, sort);
         
         Page<ReviewDTO> reviews = reviewService.getReviewsByProductId(productId, pageable, minRating);
         return ResponseEntity.ok(reviews);
     }
+
+    @PostMapping("/{reviewId}/helpful")
+    public ResponseEntity<?> toggleHelpful(
+            @PathVariable Long reviewId,
+            @RequestParam String deviceId
+    ) {
+        try {
+            HelpfulVoteResponseDTO response = reviewService.toggleHelpful(reviewId, deviceId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Review not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            }
+            throw e;
+        }
+    }
 }
-
-

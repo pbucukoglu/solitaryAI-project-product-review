@@ -13,7 +13,8 @@ import java.time.LocalDateTime;
         indexes = {
                 @Index(name = "idx_reviews_product_id", columnList = "product_id"),
                 @Index(name = "idx_reviews_product_id_created_at", columnList = "product_id, created_at"),
-                @Index(name = "idx_reviews_product_id_rating", columnList = "product_id, rating")
+                @Index(name = "idx_reviews_product_id_rating", columnList = "product_id, rating"),
+                @Index(name = "idx_reviews_product_id_helpful", columnList = "product_id, helpful_count")
         }
 )
 @Data
@@ -40,6 +41,9 @@ public class Review {
 
     @Column(name = "device_id", length = 128)
     private String deviceId;
+
+    @Column(name = "helpful_count", nullable = false)
+    private Long helpfulCount = 0L;
     
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

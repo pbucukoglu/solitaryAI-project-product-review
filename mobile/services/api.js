@@ -154,6 +154,38 @@ export const reviewService = {
     }
   },
 
+  toggleHelpful: async (reviewId, deviceId) => {
+    try {
+      const baseUrl = await demoService.getBaseUrl();
+      const timeoutMs = 5000;
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out')), timeoutMs)
+      );
+
+      const response = await Promise.race([
+        fetch(`${baseUrl}${API_ENDPOINTS.REVIEWS}/${reviewId}/helpful?deviceId=${encodeURIComponent(deviceId)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }),
+        timeoutPromise,
+      ]);
+
+      if (response.ok) {
+        const data = await response.json();
+        await demoService.setDemoMode(false);
+        return data;
+      }
+
+      const message = `HTTP_${response.status}`;
+      throw new Error(message);
+    } catch (error) {
+      await demoService.setDemoMode(true);
+      throw error;
+    }
+  },
+
   update: async (reviewId, reviewData) => {
     // Instagram-style: Try live API immediately for user actions
     try {

@@ -1,11 +1,14 @@
 package com.productreview.service;
 
 import com.productreview.dto.CreateReviewDTO;
+import com.productreview.dto.HelpfulVoteResponseDTO;
 import com.productreview.dto.ReviewDTO;
 import com.productreview.dto.UpdateReviewDTO;
 import com.productreview.entity.Product;
 import com.productreview.entity.Review;
+import com.productreview.entity.ReviewHelpfulVote;
 import com.productreview.repository.ProductRepository;
+import com.productreview.repository.ReviewHelpfulVoteRepository;
 import com.productreview.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReviewService {
     
     private final ReviewRepository reviewRepository;
+    private final ReviewHelpfulVoteRepository reviewHelpfulVoteRepository;
     private final ProductRepository productRepository;
     
     public ReviewDTO createReview(CreateReviewDTO createReviewDTO) {
@@ -99,6 +103,35 @@ public class ReviewService {
         return reviewRepository.findByProductIdFiltered(productId, minRating, pageable)
                 .map(this::convertToDTO);
     }
+
+    public HelpfulVoteResponseDTO toggleHelpful(Long reviewId, String deviceId) {
+        if (deviceId == null || deviceId.trim().isEmpty()) {
+            throw new IllegalArgumentException("deviceId is required");
+        }
+
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Review not found with id: " + reviewId));
+
+        var existing = reviewHelpfulVoteRepository.findByReviewIdAndDeviceId(reviewId, deviceId);
+        boolean helpfulByMe;
+        if (existing.isPresent()) {
+            reviewHelpfulVoteRepository.delete(existing.get());
+            long next = Math.max(0L, (review.getHelpfulCount() == null ? 0L : review.getHelpfulCount()) - 1L);
+            review.setHelpfulCount(next);
+            helpfulByMe = false;
+        } else {
+            ReviewHelpfulVote vote = new ReviewHelpfulVote();
+            vote.setReview(review);
+            vote.setDeviceId(deviceId);
+            reviewHelpfulVoteRepository.save(vote);
+            long next = (review.getHelpfulCount() == null ? 0L : review.getHelpfulCount()) + 1L;
+            review.setHelpfulCount(next);
+            helpfulByMe = true;
+        }
+
+        Review saved = reviewRepository.save(review);
+        return new HelpfulVoteResponseDTO(saved.getId(), saved.getHelpfulCount() == null ? 0L : saved.getHelpfulCount(), helpfulByMe);
+    }
     
     private ReviewDTO convertToDTO(Review review) {
         return new ReviewDTO(
@@ -108,6 +141,7 @@ public class ReviewService {
                 review.getRating(),
                 review.getReviewerName(),
                 review.getDeviceId(),
+                review.getHelpfulCount() == null ? 0L : review.getHelpfulCount(),
                 review.getCreatedAt()
         );
     }

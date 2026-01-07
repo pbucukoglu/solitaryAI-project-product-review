@@ -103,7 +103,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
         setReviewsLoading(true);
       }
 
-      const response = await reviewService.getByProductId(productId, page, REVIEWS_PAGE_SIZE, 'createdAt', 'DESC');
+      const response = await reviewService.getByProductId(productId, page, REVIEWS_PAGE_SIZE, 'helpfulCount', 'DESC');
       const newItems = response?.content || [];
 
       setReviews((prev) => {
@@ -150,6 +150,26 @@ const ProductDetailScreen = ({ route, navigation }) => {
       setReviewsLoadingMore(false);
     }
   }, [productId]);
+
+  const handleToggleHelpful = React.useCallback(async (reviewId) => {
+    if (!deviceId) {
+      Alert.alert('Error', 'Device ID not ready yet. Please try again in a moment.');
+      return;
+    }
+
+    try {
+      const result = await reviewService.toggleHelpful(reviewId, deviceId);
+      console.log('✅ [Helpful] toggle result:', result);
+
+      // Always refresh first page so counts + ordering are correct.
+      setReviewsPage(0);
+      setReviewsHasMore(true);
+      await loadReviews({ page: 0, append: false });
+    } catch (e) {
+      console.error('❌ [Helpful] toggle failed:', e);
+      Alert.alert('Error', 'Could not update helpful vote. Please check your connection.');
+    }
+  }, [deviceId, loadReviews]);
 
   const refreshAll = React.useCallback(async () => {
     try {
@@ -419,6 +439,21 @@ const ProductDetailScreen = ({ route, navigation }) => {
       {!!item.comment?.trim() && (
         <Text style={[styles.reviewComment, { color: theme.colors.textSecondary }]}>{item.comment}</Text>
       )}
+
+      <View style={styles.helpfulRow}>
+        <TouchableOpacity
+          style={[styles.helpfulButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+          onPress={() => handleToggleHelpful(item.id)}
+          activeOpacity={0.85}
+          hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
+        >
+          <Ionicons name="thumbs-up-outline" size={16} color={theme.colors.text} />
+          <Text style={[styles.helpfulText, { color: theme.colors.text }]}>Helpful</Text>
+        </TouchableOpacity>
+        <Text style={[styles.helpfulCount, { color: theme.colors.textSecondary }]}>
+          {Number(item?.helpfulCount || 0)}
+        </Text>
+      </View>
     </View>
     );
   };
@@ -999,6 +1034,29 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 20,
     marginBottom: 8,
+  },
+  helpfulRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  helpfulButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 8,
+  },
+  helpfulText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  helpfulCount: {
+    fontSize: 13,
+    fontWeight: '800',
   },
   reviewDate: {
     fontSize: 12,

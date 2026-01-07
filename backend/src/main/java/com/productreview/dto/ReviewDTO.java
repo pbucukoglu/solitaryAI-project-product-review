@@ -16,7 +16,6 @@ public class ReviewDTO {
     private Integer rating;
     private String reviewerName;
     private String deviceId;
+    private Long helpfulCount;
     private LocalDateTime createdAt;
 }
-
-
