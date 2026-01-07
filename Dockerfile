@@ -9,7 +9,7 @@ COPY backend/src backend/src
 RUN cd backend && mvn clean package -DskipTests
 
 # Use OpenJDK for running
-FROM openjdk:17-jdk-slim
+FROM openjdk:17-jdk-slim-bullseye AS runtime
 
 WORKDIR /app
 COPY --from=build /app/backend/target/product-review-backend-0.0.1-SNAPSHOT.jar app.jar
