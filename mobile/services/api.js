@@ -76,8 +76,13 @@ export const productService = {
   },
   
   getById: async (id) => {
-    // Instagram-style: Start with demo data immediately
-    const demoData = await demoService.getDemoProductById(id);
+    // Instagram-style: Start with demo data immediately (if available)
+    let demoData = null;
+    try {
+      demoData = await demoService.getDemoProductById(id);
+    } catch (e) {
+      demoData = null;
+    }
     
     // Try live API in background
     try {
@@ -100,9 +105,15 @@ export const productService = {
         await demoService.setDemoMode(false);
         return data;
       }
+      if (response.status === 404) {
+        throw new Error('Product not found');
+      }
     } catch (error) {
       console.log('🌐 [API] Live API failed for product detail, keeping demo data:', error.message);
       await demoService.setDemoMode(true);
+      if (!demoData) {
+        throw error;
+      }
     }
     
     // Return demo data immediately
@@ -204,16 +215,43 @@ export const reviewService = {
   },
   
   getByProductId: async (productId, page = 0, size = 20, sortBy = 'createdAt', sortDir = 'DESC', minRating = null) => {
-    // Instagram-style: Start with demo data immediately
-    const demoReviews = await demoService.getDemoProductById(productId);
+    // Instagram-style: Start with demo data immediately (if available)
+    let demoReviews = null;
+    try {
+      demoReviews = await demoService.getDemoProductById(productId);
+    } catch (e) {
+      demoReviews = null;
+    }
+
+    const allDemoItemsRaw = demoReviews?.reviews || [];
+    const minRatingNumber = minRating !== null && minRating !== undefined ? Number(minRating) : null;
+    const allDemoItems = allDemoItemsRaw
+      .filter((r) => {
+        if (!minRatingNumber) return true;
+        return (Number(r?.rating) || 0) >= minRatingNumber;
+      })
+      .sort((a, b) => {
+        if (sortBy !== 'createdAt') return 0;
+        const ad = new Date(a?.createdAt || 0).getTime();
+        const bd = new Date(b?.createdAt || 0).getTime();
+        return sortDir === 'ASC' ? ad - bd : bd - ad;
+      });
+
+    const startIndex = Math.max(0, Number(page) || 0) * (Number(size) || 0);
+    const endIndex = startIndex + (Number(size) || 0);
+    const pageItems = allDemoItems.slice(startIndex, endIndex);
+    const totalElements = allDemoItems.length;
+    const totalPages = size > 0 ? Math.max(1, Math.ceil(totalElements / size)) : 1;
+    const last = totalPages ? page >= totalPages - 1 : true;
+
     const demoResponse = {
-      content: demoReviews.reviews || [],
-      totalElements: demoReviews.reviews?.length || 0,
-      totalPages: 1,
+      content: pageItems,
+      totalElements,
+      totalPages,
       size: size,
       number: page,
-      first: true,
-      last: true,
+      first: page === 0,
+      last,
     };
     
     // Try live API in background
@@ -235,17 +273,19 @@ export const reviewService = {
         // no-op (avoid crashing on logging)
       }
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-      
-      const response = await fetch(`${baseUrl}${API_ENDPOINTS.REVIEWS}/product/${productId}?${new URLSearchParams(params).toString()}`, {
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      clearTimeout(timeoutId);
+      const timeoutMs = 5000;
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out')), timeoutMs)
+      );
+
+      const response = await Promise.race([
+        fetch(`${baseUrl}${API_ENDPOINTS.REVIEWS}/product/${productId}?${new URLSearchParams(params).toString()}`, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }),
+        timeoutPromise,
+      ]);
       
       if (response.ok) {
         const data = await response.json();
@@ -253,16 +293,21 @@ export const reviewService = {
         await demoService.setDemoMode(false);
         return data;
       }
+      if (response.status === 404) {
+        throw new Error('Product not found');
+      }
     } catch (error) {
       console.log('🌐 [API] Live reviews failed, keeping demo reviews:', error.message);
       await demoService.setDemoMode(true);
+      if (!demoReviews) {
+        throw error;
+      }
     }
     
-    // Return demo data immediately
+    // Return demo reviews immediately
     return demoResponse;
   },
 };
 
 export default api;
-
 

@@ -99,6 +99,15 @@ const ProductCard = ({
             )}
           </View>
 
+          <View style={styles.imageOverlayRow}>
+            {!!item?.category && (
+              <CategoryChip label={item.category} variant="overlay" style={styles.overlayChip} />
+            )}
+            {!!item?.reviewCount && item.reviewCount > 0 && (
+              <RatingPill rating={item.averageRating} count={item.reviewCount} variant="overlay" style={styles.overlayChip} />
+            )}
+          </View>
+
           <Animated.View style={[styles.favoriteFab, { transform: [{ scale: favScale }] }]}>
             <Pressable
               onPress={handleFavoritePress}
@@ -123,13 +132,6 @@ const ProductCard = ({
         </View>
 
         <View style={styles.content}>
-          <View style={styles.topRow}>
-            {!!item?.category && <CategoryChip label={item.category} />}
-            {!!item?.reviewCount && item.reviewCount > 0 && (
-              <RatingPill rating={item.averageRating} count={item.reviewCount} />
-            )}
-          </View>
-
           <Text style={[styles.title, { color: theme.colors.text, fontSize: scaleFont(16) }]} numberOfLines={2}>
             {item?.name}
           </Text>
@@ -163,6 +165,19 @@ const styles = StyleSheet.create({
   imageWrap: {
     position: 'relative',
   },
+  imageOverlayRow: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  overlayChip: {
+    maxWidth: '62%',
+  },
   imageRatio: {
     width: '100%',
     aspectRatio: IMAGE_ASPECT_RATIO,
@@ -191,14 +206,8 @@ const styles = StyleSheet.create({
   content: {
     padding: 14,
   },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
   title: {
-    marginTop: 10,
+    marginTop: 2,
     fontWeight: '900',
     letterSpacing: -0.2,
   },

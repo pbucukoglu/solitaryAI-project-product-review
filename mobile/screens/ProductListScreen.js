@@ -232,7 +232,19 @@ const ProductListScreen = ({ navigation }) => {
       });
       
       if (append) {
-        setProducts(prev => [...prev, ...response.content]);
+        setProducts((prev) => {
+          const merged = [...(prev || []), ...(response.content || [])];
+          const seen = new Set();
+          const deduped = [];
+          for (const p of merged) {
+            const id = p?.id;
+            if (id === null || id === undefined) continue;
+            if (seen.has(id)) continue;
+            seen.add(id);
+            deduped.push(p);
+          }
+          return deduped;
+        });
       } else {
         setProducts(response.content);
       }
@@ -270,7 +282,7 @@ const ProductListScreen = ({ navigation }) => {
 
     entranceProgress.setValue(0);
     Animated.spring(entranceProgress, {
-      toValue: 1,
+      toValue: 1.25,
       useNativeDriver: true,
       speed: 14,
       bounciness: 6,

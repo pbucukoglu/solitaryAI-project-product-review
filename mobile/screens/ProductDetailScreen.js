@@ -37,6 +37,7 @@ import { getRelativeTime } from '../utils/timeUtils';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HEADER_MAX_HEIGHT = 320;
 const HEADER_MIN_HEIGHT = 92;
+const REVIEWS_PAGE_SIZE = 10;
 
 const ProductDetailScreen = ({ route, navigation }) => {
   const { productId } = route.params;
@@ -82,11 +83,6 @@ const ProductDetailScreen = ({ route, navigation }) => {
       // Check if we're in demo mode after the API call
       const demoMode = await demoService.shouldUseDemoMode();
       setIsDemoMode(demoMode);
-      
-      // If product has reviews from API, set them
-      if (productData.reviews) {
-        setReviews(productData.reviews);
-      }
     } catch (error) {
       console.error('Error loading product:', error);
       // Don't show error for demo mode fallback
@@ -107,11 +103,41 @@ const ProductDetailScreen = ({ route, navigation }) => {
         setReviewsLoading(true);
       }
 
-      const response = await reviewService.getByProductId(productId, page, 10, 'createdAt', 'DESC');
+      const response = await reviewService.getByProductId(productId, page, REVIEWS_PAGE_SIZE, 'createdAt', 'DESC');
       const newItems = response?.content || [];
 
-      setReviews(prev => (append ? [...prev, ...newItems] : newItems));
-      setReviewsHasMore(!response?.last);
+      setReviews((prev) => {
+        if (!append) return newItems;
+        const merged = [...(prev || []), ...(newItems || [])];
+        const seen = new Set();
+        const deduped = [];
+        for (const r of merged) {
+          const id = r?.id;
+          if (id === null || id === undefined) continue;
+          if (seen.has(id)) continue;
+          seen.add(id);
+          deduped.push(r);
+        }
+        return deduped;
+      });
+
+      const hasLastFlag = typeof response?.last === 'boolean';
+      const hasTotalPages = typeof response?.totalPages === 'number';
+      const hasMoreFromLast = hasLastFlag ? !response.last : null;
+      const hasMoreFromPages = hasTotalPages ? page < response.totalPages - 1 : null;
+      const hasMoreFromPageSize = (newItems?.length || 0) >= REVIEWS_PAGE_SIZE;
+
+      const hasMore =
+        (hasMoreFromLast !== null ? hasMoreFromLast : null) ??
+        (hasMoreFromPages !== null ? hasMoreFromPages : null) ??
+        hasMoreFromPageSize;
+
+      // If append returned no new unique items, stop showing load more.
+      if (append && (newItems?.length || 0) === 0) {
+        setReviewsHasMore(false);
+      } else {
+        setReviewsHasMore(Boolean(hasMore));
+      }
       setReviewsPage(page);
     } catch (error) {
       console.error('Error loading reviews:', error);
