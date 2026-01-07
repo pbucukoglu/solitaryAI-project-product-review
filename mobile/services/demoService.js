@@ -1,11 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { demoProducts, getDemoReviewsByProductId, addDemoReview } from '../data/demoData';
+import Constants from 'expo-constants';
 
 const DEMO_MODE_KEY = '@demo_mode_active';
 const BASE_URL_KEY = '@base_url';
 
 // Default base URL (can be overridden in settings)
-const DEFAULT_BASE_URL = 'https://solitaryai-project-product-review-production.up.railway.app';
+const DEFAULT_BASE_URL =
+  Constants?.expoConfig?.extra?.apiUrl || 'https://solitaryai-project-product-review-production.up.railway.app';
 
 export const demoService = {
   // Check if we should use demo mode
