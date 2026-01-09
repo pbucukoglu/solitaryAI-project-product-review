@@ -145,11 +145,10 @@ public class GroqReviewSummaryService {
             Map<String, Object> req = new HashMap<>();
             req.put("model", model);
             req.put("temperature", 0.2);
-            req.put("response_format", Map.of("type", "json_object"));
             req.put("messages", List.of(
                     Map.of(
                             "role", "system",
-                            "content", "Return STRICT JSON ONLY with keys: takeaway (string), pros (array of strings), cons (array of strings). No markdown. No code fences. No extra keys."
+                            "content", "Return ONLY a raw JSON object with keys: takeaway (string), pros (array of strings), cons (array of strings). No markdown, no code fences, no extra text."
                     ),
                     Map.of(
                             "role", "user",
