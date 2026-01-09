@@ -42,7 +42,19 @@ public class ProductService {
         boolean hasMinPrice = minPrice != null;
         boolean hasMaxPrice = maxPrice != null;
         
-        if (hasSearch || hasMinRating || hasMinPrice || hasMaxPrice) {
+        boolean isSortByReviewCount = pageable.getSort().getOrderFor("reviewCount") != null;
+        boolean isSortByAverageRating = pageable.getSort().getOrderFor("averageRating") != null;
+
+        boolean isReviewAggregateSort = isSortByReviewCount || isSortByAverageRating;
+        boolean hasAnyNonCategoryFilters = hasSearch || hasMinRating || hasMinPrice || hasMaxPrice;
+
+        if (isReviewAggregateSort && !hasAnyNonCategoryFilters) {
+            if (hasCategory) {
+                products = productRepository.findByCategoryOrderByReviewAggregates(category, pageable);
+            } else {
+                products = productRepository.findAllOrderByReviewAggregates(pageable);
+            }
+        } else if (hasSearch || hasMinRating || hasMinPrice || hasMaxPrice) {
             products = productRepository.findAll(
                     ProductSpecifications.categoryAndMultiTermSearch(
                             hasCategory ? category : null,
