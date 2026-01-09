@@ -9,7 +9,7 @@ const ReviewSummaryCard = ({
   empty,
 }) => {
   const { theme } = useTheme();
-  const title = 'Review Summary';
+  const title = 'Smart Review Insights';
 
   if (loading) {
     return (
@@ -63,6 +63,41 @@ const ReviewSummaryCard = ({
         <Text style={[styles.takeaway, { color: theme.colors.text }]}>{summary.takeaway}</Text>
       )}
 
+      {(summary.pros?.length || 0) > 0 && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Pros</Text>
+          {summary.pros.map((p, idx) => (
+            <Text key={`p-${idx}`} style={[styles.bullet, { color: theme.colors.textSecondary }]}>
+              • {p}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      {(summary.cons?.length || 0) > 0 && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Cons</Text>
+          {summary.cons.map((c, idx) => (
+            <Text key={`c-${idx}`} style={[styles.bullet, { color: theme.colors.textSecondary }]}>
+              • {c}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      {(summary.topTopics?.length || 0) > 0 && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Top Topics</Text>
+          <View style={styles.topicsRow}>
+            {summary.topTopics.map((t, idx) => (
+              <View key={`t-${idx}`} style={[styles.topicChip, { backgroundColor: theme.colors.surfaceAlt, borderColor: theme.colors.border }]}>
+                <Text style={[styles.topicText, { color: theme.colors.textSecondary }]}>{t}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
     </View>
   );
 };
@@ -105,6 +140,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 4,
+  },
+  topicsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  topicChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  topicText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   emptyText: {
     fontSize: 14,

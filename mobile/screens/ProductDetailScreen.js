@@ -195,6 +195,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
         takeaway: 'No reviews yet.',
         pros: [],
         cons: [],
+        topTopics: [],
       };
     }
 
@@ -231,8 +232,9 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
     return {
         takeaway,
-        pros: [],
-        cons: [],
+        pros: positives.slice(0, 3).map(p => p.split(/\.|\n|\r|!|\?/)[0].trim().slice(0, 90)),
+        cons: negatives.slice(0, 3).map(c => c.split(/\.|\n|\r|!|\?/)[0].trim().slice(0, 90)),
+        topTopics: [],
       };
   }, []);
 
@@ -242,7 +244,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
     const hasAnyReviews = (Number(latestReviewCountRef.current || 0) || latestReviewsRef.current.length) > 0;
     if (!hasAnyReviews) {
-      setReviewSummary({ takeaway: '', pros: [], cons: [] });
+      setReviewSummary({ takeaway: '', pros: [], cons: [], topTopics: [] });
       setReviewSummarySource('none');
       setReviewSummaryError(null);
       setReviewSummaryLoading(false);
@@ -264,13 +266,14 @@ const ProductDetailScreen = ({ route, navigation }) => {
       setReviewSummaryError(null);
       const resp = await productService.getReviewSummary(productId, 30);
       const s = resp?.summary;
-      if (!s || typeof s.summary !== 'string') {
+      if (!s || typeof s.takeaway !== 'string') {
         throw new Error('Invalid summary');
       }
       setReviewSummary({
-        takeaway: s.summary || '',
-        pros: [],
-        cons: [],
+        takeaway: s.takeaway || '',
+        pros: Array.isArray(s.pros) ? s.pros : [],
+        cons: Array.isArray(s.cons) ? s.cons : [],
+        topTopics: Array.isArray(s.topTopics) ? s.topTopics : [],
       });
       setReviewSummarySource(resp?.source || 'ai');
       lastFetchedSummaryForReviewCountRef.current = currentCount;

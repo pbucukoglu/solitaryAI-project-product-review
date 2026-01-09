@@ -76,7 +76,7 @@ public class GroqReviewSummaryService {
             ReviewSummaryResponseDTO response = new ReviewSummaryResponseDTO(
                     productId,
                     0L,
-                    new ReviewSummaryDTO("No reviews yet.", List.of(), List.of()),
+                    new ReviewSummaryDTO("No reviews yet.", List.of(), List.of(), List.of()),
                     Instant.now().toString(),
                     "none"
             );
@@ -110,10 +110,12 @@ public class GroqReviewSummaryService {
 
     private String buildPrompt(Product product, List<Review> reviews) {
         StringBuilder sb = new StringBuilder();
-        sb.append("You are an assistant that summarizes product reviews in a natural, conversational style. ");
-        sb.append("Return ONLY a raw JSON object with a single key: summary (string). ");
-        sb.append("The summary should sound like 'Users think this product...' or 'Most people feel that...' and be 1-2 sentences. ");
-        sb.append("No pros/cons lists, no markdown, no code fences, no extra text.\n\n");
+        sb.append("You are an assistant that summarizes product reviews in a conservative, e-commerce style. ");
+        sb.append("Return ONLY a raw JSON object with keys: takeaway (string), pros (array of strings), cons (array of strings), topTopics (array of strings). ");
+        sb.append("Use neutral language like 'Most users mention...' or 'Some users report...'. ");
+        sb.append("Avoid absolute claims, adjectives like 'amazing'/'terrible', and emojis. ");
+        sb.append("Group feedback into common e-commerce topics: Battery, Performance, Price, Build quality, Camera, Delivery, Comfort. ");
+        sb.append("Max 3 pros/cons, max 5 topics. No markdown, no code fences, no extra text.\n\n");
 
         sb.append("Product:\n");
         sb.append("name: ").append(product.getName()).append("\n");
@@ -129,9 +131,10 @@ public class GroqReviewSummaryService {
         }
 
         sb.append("\nGuidelines:\n");
-        sb.append("- Write 1-2 sentences in natural language.\n");
-        sb.append("- Start with 'Users think...' or 'Most people feel...'.\n");
-        sb.append("- Do NOT include pros/cons lists.\n");
+        sb.append("- Write 1 neutral takeaway sentence.\n");
+        sb.append("- Extract up to 3 pros and 3 cons as short phrases.\n");
+        sb.append("- Extract up to 5 common e-commerce topics.\n");
+        sb.append("- Use conservative, factual language.\n");
 
         return sb.toString();
     }
@@ -149,7 +152,7 @@ public class GroqReviewSummaryService {
             req.put("messages", List.of(
                     Map.of(
                             "role", "system",
-                            "content", "Return ONLY a raw JSON object with a single key: summary (string). The summary should be 1-2 natural sentences like 'Users think this product...' or 'Most people feel that...'. No pros/cons lists, no markdown, no code fences, no extra text."
+                            "content", "Return ONLY a raw JSON object with keys: takeaway (string), pros (array of strings), cons (array of strings), topTopics (array of strings). Use neutral language like 'Most users mention...' or 'Some users report...'. Avoid absolute claims, adjectives like 'amazing'/'terrible', and emojis. Group feedback into common e-commerce topics: Battery, Performance, Price, Build quality, Camera, Delivery, Comfort. Max 3 pros/cons, max 5 topics. No markdown, no code fences, no extra text."
                     ),
                     Map.of(
                             "role", "user",
@@ -191,11 +194,14 @@ public class GroqReviewSummaryService {
             String json = extractJsonObject(raw);
             JsonNode parsed = objectMapper.readTree(json);
 
-            String summary = parsed.path("summary").asText(null);
-            if (summary == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Groq response missing summary");
+            String takeaway = parsed.path("takeaway").asText(null);
+            List<String> pros = asStringList(parsed.path("pros"));
+            List<String> cons = asStringList(parsed.path("cons"));
+            List<String> topTopics = asStringList(parsed.path("topTopics"));
+            if (takeaway == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Groq response missing takeaway");
             }
-            return new ReviewSummaryDTO(summary, List.of(), List.of());
+            return new ReviewSummaryDTO(takeaway, pros, cons, topTopics);
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {

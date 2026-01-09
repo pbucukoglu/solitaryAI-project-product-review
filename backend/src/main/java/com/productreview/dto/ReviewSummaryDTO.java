@@ -13,4 +13,5 @@ public class ReviewSummaryDTO {
     private String takeaway;
     private List<String> pros;
     private List<String> cons;
+    private List<String> topTopics;
 }
