@@ -35,10 +35,16 @@ public class ProductController {
     ) {
         Sort sort;
         if ("averageRating".equals(sortBy)) {
-            // Amazon-style: products with no rating appear last (NULLS LAST)
-            sort = sortDir.equalsIgnoreCase("DESC")
-                    ? Sort.by(Sort.Order.desc(sortBy).with(Sort.NullHandling.NULLS_LAST))
-                    : Sort.by(Sort.Order.asc(sortBy).with(Sort.NullHandling.NULLS_LAST));
+            // Ensure products with no reviews appear last by sorting primarily on reviewCount DESC
+            // (reviewCount=0 -> last), then on averageRating.
+            Sort.Order ratingOrder = sortDir.equalsIgnoreCase("DESC")
+                    ? Sort.Order.desc(sortBy).with(Sort.NullHandling.NULLS_LAST)
+                    : Sort.Order.asc(sortBy).with(Sort.NullHandling.NULLS_LAST);
+
+            sort = Sort.by(
+                    Sort.Order.desc("reviewCount"),
+                    ratingOrder
+            );
         } else {
             sort = sortDir.equalsIgnoreCase("DESC")
                     ? Sort.by(sortBy).descending()
