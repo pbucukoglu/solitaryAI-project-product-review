@@ -11,9 +11,9 @@ export const demoProducts = [
     averageRating: 4.7,
     reviewCount: 342,
     imageUrls: [
-      "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400",
-      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400",
-      "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400"
+      "https://picsum.photos/seed/macbook-pro/400/300.jpg",
+      "https://picsum.photos/seed/macbook-pro-2/400/300.jpg",
+      "https://picsum.photos/seed/macbook-pro-3/400/300.jpg"
     ]
   },
   {
@@ -25,8 +25,8 @@ export const demoProducts = [
     averageRating: 4.8,
     reviewCount: 521,
     imageUrls: [
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400",
-      "https://images.unsplash.com/photo-1484704849701-f408f199234f?w=400"
+      "https://picsum.photos/seed/sony-headphones/400/300.jpg",
+      "https://picsum.photos/seed/sony-headphones-2/400/300.jpg"
     ]
   },
   {
@@ -38,8 +38,8 @@ export const demoProducts = [
     averageRating: 4.3,
     reviewCount: 189,
     imageUrls: [
-      "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400",
-      "https://images.unsplash.com/photo-1460353581641-37baddab0aa2?w=400"
+      "https://picsum.photos/seed/nike-air-max/400/300.jpg",
+      "https://picsum.photos/seed/nike-air-max-2/400/300.jpg"
     ]
   },
   {
@@ -51,7 +51,7 @@ export const demoProducts = [
     averageRating: 4.5,
     reviewCount: 89,
     imageUrls: [
-      "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400"
+      "https://picsum.photos/seed/great-gatsby/400/300.jpg"
     ]
   },
   {
@@ -63,8 +63,8 @@ export const demoProducts = [
     averageRating: 4.6,
     reviewCount: 412,
     imageUrls: [
-      "https://images.unsplash.com/photo-1586548133534-2e3b1f0d0b5b?w=400",
-      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
+      "https://picsum.photos/seed/instant-pot/400/300.jpg",
+      "https://picsum.photos/seed/instant-pot-2/400/300.jpg"
     ]
   },
   {
@@ -76,8 +76,8 @@ export const demoProducts = [
     averageRating: 4.2,
     reviewCount: 267,
     imageUrls: [
-      "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400",
-      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400"
+      "https://picsum.photos/seed/levis-jeans/400/300.jpg",
+      "https://picsum.photos/seed/levis-jeans-2/400/300.jpg"
     ]
   },
   {
@@ -89,8 +89,8 @@ export const demoProducts = [
     averageRating: 4.7,
     reviewCount: 445,
     imageUrls: [
-      "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400",
-      "https://images.unsplash.com/photo-1598928506311-c55ded91e20b?w=400"
+      "https://picsum.photos/seed/ipad-air/400/300.jpg",
+      "https://picsum.photos/seed/ipad-air-2/400/300.jpg"
     ]
   },
   {
@@ -102,7 +102,7 @@ export const demoProducts = [
     averageRating: 4.4,
     reviewCount: 156,
     imageUrls: [
-      "https://images.unsplash.com/photo-1506629905602-85c9cd8c8e3f?w=400"
+      "https://picsum.photos/seed/yoga-mat/400/300.jpg"
     ]
   },
   {
@@ -114,7 +114,7 @@ export const demoProducts = [
     averageRating: 4.8,
     reviewCount: 623,
     imageUrls: [
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400"
+      "https://picsum.photos/seed/atomic-habits/400/300.jpg"
     ]
   },
   {
@@ -126,8 +126,8 @@ export const demoProducts = [
     averageRating: 4.1,
     reviewCount: 198,
     imageUrls: [
-      "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400",
-      "https://images.unsplash.com/photo-1517668800784-519e8d54d8d7?w=400"
+      "https://picsum.photos/seed/coffee-maker/400/300.jpg",
+      "https://picsum.photos/seed/coffee-maker-2/400/300.jpg"
     ]
   },
   {
@@ -139,8 +139,8 @@ export const demoProducts = [
     averageRating: 4.5,
     reviewCount: 334,
     imageUrls: [
-      "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400",
-      "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400"
+      "https://picsum.photos/seed/winter-jacket/400/300.jpg",
+      "https://picsum.photos/seed/winter-jacket-2/400/300.jpg"
     ]
   },
   {
@@ -152,8 +152,8 @@ export const demoProducts = [
     averageRating: 4.3,
     reviewCount: 278,
     imageUrls: [
-      "https://images.unsplash.com/photo-1579313941148-1d9325cd8c94?w=400",
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400"
+      "https://picsum.photos/seed/galaxy-watch/400/300.jpg",
+      "https://picsum.photos/seed/galaxy-watch-2/400/300.jpg"
     ]
   }
 ];
