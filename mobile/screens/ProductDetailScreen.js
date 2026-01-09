@@ -62,6 +62,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
   const latestReviewsRef = React.useRef([]);
   const latestReviewCountRef = React.useRef(0);
+  const lastFetchedSummaryForReviewCountRef = React.useRef(null);
 
   useEffect(() => {
     latestReviewsRef.current = reviews || [];
@@ -241,6 +242,16 @@ const ProductDetailScreen = ({ route, navigation }) => {
       setReviewSummarySource('none');
       setReviewSummaryError(null);
       setReviewSummaryLoading(false);
+      lastFetchedSummaryForReviewCountRef.current = 0;
+      return;
+    }
+
+    const currentCount = Number(latestReviewCountRef.current || 0);
+    if (
+      lastFetchedSummaryForReviewCountRef.current !== null &&
+      currentCount > 0 &&
+      lastFetchedSummaryForReviewCountRef.current === currentCount
+    ) {
       return;
     }
 
@@ -257,11 +268,13 @@ const ProductDetailScreen = ({ route, navigation }) => {
         pros: Array.isArray(s.pros) ? s.pros : [],
         cons: Array.isArray(s.cons) ? s.cons : [],
       });
-      setReviewSummarySource(resp?.source || 'gemini');
+      setReviewSummarySource(resp?.source || 'ai');
+      lastFetchedSummaryForReviewCountRef.current = currentCount;
     } catch (e) {
       setReviewSummary(localFallback);
       setReviewSummarySource('local');
-      setReviewSummaryError('AI summary unavailable. Showing local summary.');
+      setReviewSummaryError(null);
+      lastFetchedSummaryForReviewCountRef.current = currentCount;
     } finally {
       setReviewSummaryLoading(false);
     }
@@ -272,11 +285,19 @@ const ProductDetailScreen = ({ route, navigation }) => {
       setRefreshing(true);
       await loadProductDetails();
       await loadReviews({ page: 0, append: false });
-      await loadReviewSummary();
     } finally {
       setRefreshing(false);
     }
-  }, [loadProductDetails, loadReviews, loadReviewSummary]);
+  }, [loadProductDetails, loadReviews]);
+
+  useEffect(() => {
+    // Fetch AI summary only when reviewCount changes (e.g., new review added/deleted)
+    // and we have some reviews.
+    const cnt = Number(product?.reviewCount || 0);
+    if (!productId) return;
+    if (cnt <= 0) return;
+    loadReviewSummary();
+  }, [productId, product?.reviewCount, loadReviewSummary]);
 
   const loadDeviceId = React.useCallback(async () => {
     try {
@@ -746,9 +767,6 @@ const ProductDetailScreen = ({ route, navigation }) => {
         <ReviewSummaryCard
           loading={reviewSummaryLoading}
           summary={reviewSummary}
-          source={reviewSummarySource}
-          error={reviewSummaryError}
-          onRetry={loadReviewSummary}
           empty={(Number(product?.reviewCount || 0) || reviews.length) === 0}
         />
 

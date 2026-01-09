@@ -7,6 +7,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ReviewSummaryService {
-    private final GeminiReviewSummaryService geminiReviewSummaryService;
+    private final GroqReviewSummaryService groqReviewSummaryService;
 }
 

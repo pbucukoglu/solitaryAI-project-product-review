@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
-public class GeminiReviewSummaryService {
+public class GroqReviewSummaryService {
 
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(10);
@@ -47,14 +47,14 @@ public class GeminiReviewSummaryService {
             return cached.value;
         }
 
-        String apiKey = System.getenv("OPENAI_API_KEY");
+        String apiKey = System.getenv("GROQ_API_KEY");
         if (apiKey == null || apiKey.trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "OPENAI_API_KEY is not configured");
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "GROQ_API_KEY is not configured");
         }
 
-        String model = System.getenv("OPENAI_MODEL");
+        String model = System.getenv("GROQ_MODEL");
         if (model == null || model.trim().isEmpty()) {
-            model = "gpt-4o-mini";
+            model = "llama-3.3-70b-versatile";
         }
 
         Product product = productRepository.findById(productId)
@@ -88,7 +88,7 @@ public class GeminiReviewSummaryService {
 
         ReviewSummaryDTO summary;
         try {
-            summary = callGemini(apiKey, prompt);
+            summary = callGroq(apiKey, prompt);
         } catch (ResponseStatusException e) {
             if (e.getStatusCode() == HttpStatus.SERVICE_UNAVAILABLE) {
                 throw e;
@@ -101,7 +101,7 @@ public class GeminiReviewSummaryService {
                 (long) usable.size(),
                 summary,
                 Instant.now().toString(),
-                "openai"
+                "groq"
         );
 
         cache.put(productId, new CacheEntry(response));
@@ -135,11 +135,11 @@ public class GeminiReviewSummaryService {
         return sb.toString();
     }
 
-    private ReviewSummaryDTO callGemini(String apiKey, String prompt) {
+    private ReviewSummaryDTO callGroq(String apiKey, String prompt) {
         try {
-            String model = System.getenv("OPENAI_MODEL");
+            String model = System.getenv("GROQ_MODEL");
             if (model == null || model.trim().isEmpty()) {
-                model = "gpt-4o-mini";
+                model = "llama-3.3-70b-versatile";
             }
 
             Map<String, Object> req = new HashMap<>();
@@ -160,7 +160,7 @@ public class GeminiReviewSummaryService {
             String body = objectMapper.writeValueAsString(req);
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(java.net.URI.create("https://api.openai.com/v1/chat/completions"))
+                    .uri(java.net.URI.create("https://api.groq.com/openai/v1/chat/completions"))
                     .timeout(REQUEST_TIMEOUT)
                     .header("Content-Type", "application/json")
                     .header("Authorization", "Bearer " + apiKey)
@@ -172,7 +172,7 @@ public class GeminiReviewSummaryService {
                 String snippet = safeSnippet(response.body());
                 throw new ResponseStatusException(
                         HttpStatus.BAD_GATEWAY,
-                        "OpenAI call failed with status " + response.statusCode() + (snippet.isEmpty() ? "" : (": " + snippet))
+                        "Groq call failed with status " + response.statusCode() + (snippet.isEmpty() ? "" : (": " + snippet))
                 );
             }
 
@@ -184,7 +184,7 @@ public class GeminiReviewSummaryService {
                     .path("content");
 
             if (contentNode.isMissingNode() || contentNode.asText().trim().isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "OpenAI returned empty response");
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Groq returned empty response");
             }
 
             String raw = contentNode.asText();
@@ -196,14 +196,14 @@ public class GeminiReviewSummaryService {
             List<String> cons = asStringList(parsed.path("cons"));
 
             if (takeaway == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "OpenAI response missing takeaway");
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Groq response missing takeaway");
             }
 
             return new ReviewSummaryDTO(takeaway, pros, cons);
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "OpenAI call failed");
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Groq call failed");
         }
     }
 
@@ -233,7 +233,7 @@ public class GeminiReviewSummaryService {
         int start = s.indexOf('{');
         int end = s.lastIndexOf('}');
         if (start < 0 || end <= start) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "OpenAI response was not valid JSON");
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Groq response was not valid JSON");
         }
         return s.substring(start, end + 1);
     }

@@ -1,31 +1,21 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import Skeleton from './Skeleton';
 
 const ReviewSummaryCard = ({
   loading,
   summary,
-  source,
-  error,
-  onRetry,
   empty,
 }) => {
   const { theme } = useTheme();
-
-  const title = useMemo(() => {
-    if (source === 'gemini') return 'AI Review Summary';
-    return 'Review Summary';
-  }, [source]);
+  const title = 'Review Summary';
 
   if (loading) {
     return (
       <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}> 
         <View style={styles.headerRow}>
           <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
-          <View style={styles.badge}>
-            <Skeleton height={16} width={60} radius={999} baseColor={theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'} highlightColor={theme.isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)'} />
-          </View>
         </View>
         <Skeleton height={12} width={'92%'} radius={10} baseColor={theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'} highlightColor={theme.isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)'} />
         <View style={{ height: 10 }} />
@@ -59,17 +49,6 @@ const ReviewSummaryCard = ({
         <View style={styles.headerRow}>
           <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
         </View>
-        {!!error && (
-          <Text style={[styles.errorText, { color: theme.colors.danger }]}>{error}</Text>
-        )}
-        {!!onRetry && (
-          <TouchableOpacity
-            style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
-            onPress={onRetry}
-          >
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
-        )}
       </View>
     );
   }
@@ -78,19 +57,6 @@ const ReviewSummaryCard = ({
     <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}> 
       <View style={styles.headerRow}>
         <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
-        <View
-          style={[
-            styles.sourcePill,
-            {
-              backgroundColor: source === 'gemini' ? theme.colors.primary : theme.colors.surfaceAlt,
-              borderColor: theme.colors.border,
-            },
-          ]}
-        >
-          <Text style={[styles.sourceText, { color: source === 'gemini' ? '#fff' : theme.colors.textSecondary }]}> 
-            {source === 'gemini' ? 'Gemini' : 'Local'}
-          </Text>
-        </View>
       </View>
 
       {!!summary.takeaway && (
@@ -119,17 +85,6 @@ const ReviewSummaryCard = ({
         </View>
       )}
 
-      {!!error && !!onRetry && (
-        <View style={styles.footerRow}>
-          <Text style={[styles.footerError, { color: theme.colors.textSecondary }]}>{error}</Text>
-          <TouchableOpacity
-            style={[styles.inlineRetry, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
-            onPress={onRetry}
-          >
-            <Text style={[styles.inlineRetryText, { color: theme.colors.text }]}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 };
@@ -151,19 +106,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '900',
-  },
-  badge: {
-    alignItems: 'flex-end',
-  },
-  sourcePill: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  sourceText: {
-    fontSize: 12,
-    fontWeight: '800',
   },
   takeaway: {
     fontSize: 15,
@@ -190,43 +132,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     paddingVertical: 6,
-  },
-  errorText: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 10,
-  },
-  retryButton: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  retryText: {
-    color: '#fff',
-    fontWeight: '900',
-    fontSize: 13,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 12,
-  },
-  footerError: {
-    flex: 1,
-    fontSize: 12,
-    marginRight: 12,
-  },
-  inlineRetry: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  inlineRetryText: {
-    fontSize: 12,
-    fontWeight: '900',
   },
 });
 
