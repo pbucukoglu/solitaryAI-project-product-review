@@ -70,7 +70,13 @@ public class ReviewSummaryService {
                     cleaned.cons
             );
         } catch (Exception e) {
-            log.warn("DeepSeek review summary failed; falling back to local summary");
+            if (e instanceof ResponseStatusException rse) {
+                log.warn("DeepSeek review summary failed (status={}): falling back to local summary", rse.getStatusCode());
+            } else if (e instanceof DeepSeekClient.DeepSeekClientException dse) {
+                log.warn("DeepSeek review summary failed (provider_status={}): falling back to local summary", dse.getProviderStatusCode());
+            } else {
+                log.warn("DeepSeek review summary failed ({}): falling back to local summary", e.getClass().getSimpleName());
+            }
             Summary local = buildLocalSummary(latest);
             return new ReviewSummaryResponseDTO(
                     "LOCAL",
@@ -168,8 +174,12 @@ public class ReviewSummaryService {
         List<Map.Entry<String, Integer>> entries = new ArrayList<>(counts.entrySet());
         entries.sort((a, b) -> Integer.compare(b.getValue(), a.getValue()));
         List<String> out = new ArrayList<>();
+        List<String> seen = new ArrayList<>();
         for (Map.Entry<String, Integer> e : entries) {
-            out.add(humanizeTheme(e.getKey()));
+            String label = humanizeTheme(e.getKey());
+            if (seen.contains(label)) continue;
+            seen.add(label);
+            out.add(label);
             if (out.size() >= 3) break;
         }
         return out;

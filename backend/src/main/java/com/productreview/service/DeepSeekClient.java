@@ -60,7 +60,7 @@ public class DeepSeekClient {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "DeepSeek call failed");
+                throw new DeepSeekClientException(response.statusCode());
             }
 
             JsonNode root = objectMapper.readTree(response.body());
@@ -84,8 +84,10 @@ public class DeepSeekClient {
             return new SummaryResult(pros, cons);
         } catch (ResponseStatusException e) {
             throw e;
+        } catch (DeepSeekClientException e) {
+            throw e;
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "DeepSeek call failed");
+            throw new DeepSeekClientException(-1);
         }
     }
 
@@ -111,10 +113,22 @@ public class DeepSeekClient {
         int start = s.indexOf('{');
         int end = s.lastIndexOf('}');
         if (start < 0 || end <= start) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "DeepSeek response was not valid JSON");
+            throw new DeepSeekClientException(-1);
         }
         return s.substring(start, end + 1);
     }
 
     public record SummaryResult(List<String> pros, List<String> cons) {}
+
+    public static final class DeepSeekClientException extends RuntimeException {
+        private final int providerStatusCode;
+
+        public DeepSeekClientException(int providerStatusCode) {
+            this.providerStatusCode = providerStatusCode;
+        }
+
+        public int getProviderStatusCode() {
+            return providerStatusCode;
+        }
+    }
 }
