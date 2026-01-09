@@ -114,8 +114,29 @@ public class GroqReviewSummaryService {
         sb.append("Return ONLY a raw JSON object with keys: takeaway (string), pros (array of strings), cons (array of strings), topTopics (array of strings). ");
         sb.append("Use neutral language like 'Most users mention...' or 'Some users report...'. ");
         sb.append("Avoid absolute claims, adjectives like 'amazing'/'terrible', and emojis. ");
-        sb.append("Group feedback into common e-commerce topics: Battery, Performance, Price, Build quality, Camera, Delivery, Comfort. ");
         sb.append("Max 3 pros/cons, max 5 topics. No markdown, no code fences, no extra text.\n\n");
+
+        // Category-specific topic guidance
+        String category = product.getCategory() != null ? product.getCategory().toLowerCase() : "";
+        if (category.contains("book") || category.contains("kitap")) {
+            sb.append("For books, focus on topics like: Writing style, Plot, Characters, Length, Translation, Cover quality. ");
+            sb.append("Do NOT include hardware topics like Battery, Camera, Performance.\n\n");
+        } else if (category.contains("electronics") || category.contains("camera") || category.contains("phone") || category.contains("laptop") || category.contains("tablet")) {
+            sb.append("For electronics, focus on topics like: Battery, Performance, Build quality, Screen, Camera, Price, Delivery. ");
+            sb.append("Do NOT include irrelevant topics like Plot, Characters.\n\n");
+        } else if (category.contains("clothing") || category.contains("giyim") || category.contains("shirt") || category.contains("pants") || category.contains("dress")) {
+            sb.append("For clothing, focus on topics like: Fit, Fabric quality, Size, Color, Style, Durability, Price. ");
+            sb.append("Do NOT include hardware topics like Battery, Screen, Performance.\n\n");
+        } else if (category.contains("home") || category.contains("kitchen") || category.contains("furniture") || category.contains("decoration")) {
+            sb.append("For home & kitchen, focus on topics like: Quality, Assembly, Size, Material, Price, Delivery, Packaging. ");
+            sb.append("Do NOT include irrelevant topics like Battery, Screen, Camera.\n\n");
+        } else if (category.contains("sports") || category.contains("outdoor") || category.contains("shoes") || category.contains("exercise")) {
+            sb.append("For sports & outdoors, focus on topics like: Durability, Comfort, Fit, Material, Performance, Price, Weather resistance. ");
+            sb.append("Do NOT include irrelevant topics like Battery, Screen, Camera.\n\n");
+        } else {
+            sb.append("For general products, focus on topics like: Quality, Price, Delivery, Packaging, Usability, Durability. ");
+            sb.append("Only include topics actually mentioned in reviews.\n\n");
+        }
 
         sb.append("Product:\n");
         sb.append("name: ").append(product.getName()).append("\n");
@@ -133,7 +154,8 @@ public class GroqReviewSummaryService {
         sb.append("\nGuidelines:\n");
         sb.append("- Write 1 neutral takeaway sentence.\n");
         sb.append("- Extract up to 3 pros and 3 cons as short phrases.\n");
-        sb.append("- Extract up to 5 common e-commerce topics.\n");
+        sb.append("- Extract up to 5 topics relevant to the product category.\n");
+        sb.append("- Only include topics actually mentioned in reviews.\n");
         sb.append("- Use conservative, factual language.\n");
 
         return sb.toString();
@@ -152,7 +174,7 @@ public class GroqReviewSummaryService {
             req.put("messages", List.of(
                     Map.of(
                             "role", "system",
-                            "content", "Return ONLY a raw JSON object with keys: takeaway (string), pros (array of strings), cons (array of strings), topTopics (array of strings). Use neutral language like 'Most users mention...' or 'Some users report...'. Avoid absolute claims, adjectives like 'amazing'/'terrible', and emojis. Group feedback into common e-commerce topics: Battery, Performance, Price, Build quality, Camera, Delivery, Comfort. Max 3 pros/cons, max 5 topics. No markdown, no code fences, no extra text."
+                            "content", "Return ONLY a raw JSON object with keys: takeaway (string), pros (array of strings), cons (array of strings), topTopics (array of strings). Use neutral language like 'Most users mention...' or 'Some users report...'. Avoid absolute claims, adjectives like 'amazing'/'terrible', and emojis. Max 3 pros/cons, max 5 topics. Only include topics actually mentioned in reviews. No markdown, no code fences, no extra text."
                     ),
                     Map.of(
                             "role", "user",
