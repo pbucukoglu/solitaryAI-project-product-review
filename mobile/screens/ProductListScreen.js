@@ -127,6 +127,34 @@ const ProductListScreen = ({ navigation }) => {
     [t]
   );
 
+  const normalizeCategoryForApi = useCallback((category) => {
+    const raw = (category || '').trim();
+    const norm = raw.toLowerCase();
+    if (!raw) return null;
+
+    if (norm === 'electronics' || norm === t('category.electronics').toLowerCase()) return 'Electronics';
+    if (norm === 'clothing' || norm === t('category.clothing').toLowerCase()) return 'Clothing';
+    if (norm === 'books' || norm === t('category.books').toLowerCase()) return 'Books';
+    if (
+      norm === 'home & kitchen' ||
+      norm === 'home and kitchen' ||
+      norm === 'homekitchen' ||
+      norm === t('category.homeKitchen').toLowerCase()
+    ) {
+      return 'Home & Kitchen';
+    }
+    if (
+      norm === 'sports & outdoors' ||
+      norm === 'sports and outdoors' ||
+      norm === 'sportsoutdoors' ||
+      norm === t('category.sportsOutdoors').toLowerCase()
+    ) {
+      return 'Sports & Outdoors';
+    }
+
+    return raw;
+  }, [t]);
+
   const selectedSortLabel = useMemo(() => {
     const found = sortOptions.find((s) => s.sortBy === sortBy && s.sortDir === sortDir);
     if (found) return found.label;
@@ -174,32 +202,34 @@ const ProductListScreen = ({ navigation }) => {
     }
   }, []);
 
-  const buildFavoriteList = useCallback((allItems, idsSet, filters) => {
-    const ids = idsSet instanceof Set ? idsSet : new Set(idsSet || []);
-    let list = (allItems || []).filter((p) => ids.has(p?.id) && p.id !== null && p.id !== undefined);
+  const buildFavoriteList = useCallback(
+    (allItems, idsSet, filters) => {
+      const ids = idsSet instanceof Set ? idsSet : new Set(idsSet || []);
+      let list = (allItems || []).filter((p) => ids.has(p?.id) && p.id !== null && p.id !== undefined);
 
-    if (filters?.selectedCategory) {
-      list = list.filter((p) => p?.category === filters.selectedCategory);
-    }
-    if (filters?.searchQuery && String(filters.searchQuery).trim().length > 0) {
-      const q = String(filters.searchQuery).toLowerCase();
-      list = list.filter((p) =>
-        String(p?.name || '').toLowerCase().includes(q) ||
-        String(p?.description || '').toLowerCase().includes(q)
-      );
-    }
-    if (filters?.minRating !== null && filters?.minRating !== undefined) {
-      const r = Number(filters.minRating) || 0;
-      list = list.filter((p) => (Number(p?.averageRating) || 0) >= r);
-    }
-    if (filters?.minPrice && String(filters.minPrice).trim().length > 0) {
-      const v = Number(filters.minPrice);
-      if (Number.isFinite(v)) list = list.filter((p) => (Number(p?.price) || 0) >= v);
-    }
-    if (filters?.maxPrice && String(filters.maxPrice).trim().length > 0) {
-      const v = Number(filters.maxPrice);
-      if (Number.isFinite(v)) list = list.filter((p) => (Number(p?.price) || 0) <= v);
-    }
+      if (filters?.selectedCategory) {
+        const cat = normalizeCategoryForApi(filters.selectedCategory);
+        list = list.filter((p) => p?.category === cat);
+      }
+      if (filters?.searchQuery && String(filters.searchQuery).trim().length > 0) {
+        const q = String(filters.searchQuery).toLowerCase();
+        list = list.filter((p) =>
+          String(p?.name || '').toLowerCase().includes(q) ||
+          String(p?.description || '').toLowerCase().includes(q)
+        );
+      }
+      if (filters?.minRating !== null && filters?.minRating !== undefined) {
+        const r = Number(filters.minRating) || 0;
+        list = list.filter((p) => (Number(p?.averageRating) || 0) >= r);
+      }
+      if (filters?.minPrice && String(filters.minPrice).trim().length > 0) {
+        const v = Number(filters.minPrice);
+        if (Number.isFinite(v)) list = list.filter((p) => (Number(p?.price) || 0) >= v);
+      }
+      if (filters?.maxPrice && String(filters.maxPrice).trim().length > 0) {
+        const v = Number(filters.maxPrice);
+        if (Number.isFinite(v)) list = list.filter((p) => (Number(p?.price) || 0) <= v);
+      }
 
     const sortByLocal = filters?.sortBy;
     const sortDirLocal = filters?.sortDir || 'DESC';
@@ -214,7 +244,7 @@ const ProductListScreen = ({ navigation }) => {
     }
 
     return list;
-  }, []);
+  }, [normalizeCategoryForApi]);
 
   const loadFavoriteProducts = useCallback(async (overrideFilters = null) => {
     try {
@@ -309,7 +339,7 @@ const ProductListScreen = ({ navigation }) => {
         effectiveSize, 
         filters.sortBy, 
         filters.sortDir, 
-        filters.selectedCategory, 
+        normalizeCategoryForApi(filters.selectedCategory),
         filters.searchQuery || null,
         filters.minRating,
         Number.isFinite(minPriceNumber) ? minPriceNumber : null,
