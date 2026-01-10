@@ -1,7 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 const RatingDistribution = ({ reviews, theme }) => {
+  const { t } = useTranslation();
+
   // Calculate rating buckets
   const ratingBuckets = React.useMemo(() => {
     const buckets = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
@@ -18,9 +21,9 @@ const RatingDistribution = ({ reviews, theme }) => {
   if (!reviews || reviews.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Rating Distribution</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>{t('review.ratingDistribution')}</Text>
         <Text style={[styles.noReviewsText, { color: theme.colors.textSecondary }]}>
-          No reviews yet
+          {t('product.noReviews')}
         </Text>
       </View>
     );
@@ -28,7 +31,7 @@ const RatingDistribution = ({ reviews, theme }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>Rating Distribution</Text>
+      <Text style={[styles.title, { color: theme.colors.text }]}>{t('review.ratingDistribution')}</Text>
       
       <View style={styles.distribution}>
         {[5, 4, 3, 2, 1].map((stars) => {
@@ -60,7 +63,7 @@ const RatingDistribution = ({ reviews, theme }) => {
       
       <View style={styles.summary}>
         <Text style={[styles.summaryText, { color: theme.colors.textSecondary }]}>
-          {totalCount} {totalCount === 1 ? 'review' : 'reviews'} total
+          {t('review.totalReviews', { count: totalCount })}
         </Text>
       </View>
     </View>

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Animated, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import CategoryChip from './CategoryChip';
 import RatingPill from './RatingPill';
 
@@ -17,6 +18,7 @@ const ProductCard = ({
   style,
 }) => {
   const { theme, scaleFont } = useTheme();
+  const { t } = useTranslation();
 
   const firstImage = useMemo(() => {
     return item?.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : null;
@@ -145,7 +147,7 @@ const ProductCard = ({
             </Text>
             {(!item?.reviewCount || item.reviewCount === 0) && (
               <Text style={[styles.noRating, { color: theme.colors.textSecondary, fontSize: scaleFont(12) }]}>
-                No reviews yet
+                {t('product.noReviews')}
               </Text>
             )}
           </View>

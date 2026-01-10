@@ -1,9 +1,26 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 const CategoryChip = ({ label, style, variant = 'default' }) => {
   const { theme, scaleFont } = useTheme();
+  const { t } = useTranslation();
+
+  const localizedLabel = useMemo(() => {
+    const raw = (label || '').trim();
+    const norm = raw.toLowerCase();
+
+    if (!raw) return raw;
+
+    if (norm === 'electronics') return t('category.electronics');
+    if (norm === 'clothing') return t('category.clothing');
+    if (norm === 'books') return t('category.books');
+    if (norm === 'home & kitchen' || norm === 'home and kitchen' || norm === 'homekitchen') return t('category.homeKitchen');
+    if (norm === 'sports & outdoors' || norm === 'sports and outdoors' || norm === 'sportsoutdoors') return t('category.sportsOutdoors');
+
+    return raw;
+  }, [label, t]);
 
   return (
     <View
@@ -28,7 +45,7 @@ const CategoryChip = ({ label, style, variant = 'default' }) => {
         ]}
         numberOfLines={1}
       >
-        {label}
+        {localizedLabel}
       </Text>
     </View>
   );

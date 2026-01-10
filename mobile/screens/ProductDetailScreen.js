@@ -70,6 +70,20 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
   const currentLang = (i18n.language || 'en').split('-')[0];
 
+  const localizedCategory = useMemo(() => {
+    const raw = (product?.category || '').trim();
+    const norm = raw.toLowerCase();
+    if (!raw) return raw;
+
+    if (norm === 'electronics') return t('category.electronics');
+    if (norm === 'clothing') return t('category.clothing');
+    if (norm === 'books') return t('category.books');
+    if (norm === 'home & kitchen' || norm === 'home and kitchen' || norm === 'homekitchen') return t('category.homeKitchen');
+    if (norm === 'sports & outdoors' || norm === 'sports and outdoors' || norm === 'sportsoutdoors') return t('category.sportsOutdoors');
+
+    return raw;
+  }, [product?.category, t]);
+
   useEffect(() => {
     latestReviewsRef.current = reviews || [];
   }, [reviews]);
@@ -112,7 +126,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
   const loadReviews = React.useCallback(async ({ page = 0, append = false } = {}) => {
     if (!productId) {
       console.error(' [ProductDetail] Error: productId is undefined, cannot load reviews.');
-      setReviewsError('Invalid product selection.');
+      setReviewsError(t('review.invalidSelection'));
       setReviewsLoading(false);
       setReviewsLoadingMore(false);
       return;
@@ -163,7 +177,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
       setReviewsPage(page);
     } catch (error) {
       console.error('Error loading reviews:', error);
-      setReviewsError('Failed to load reviews.');
+      setReviewsError(t('review.failedToLoad'));
       if (!append) {
         setReviews([]);
       }
@@ -171,11 +185,11 @@ const ProductDetailScreen = ({ route, navigation }) => {
       setReviewsLoading(false);
       setReviewsLoadingMore(false);
     }
-  }, [productId]);
+  }, [productId, t]);
 
   const handleToggleHelpful = React.useCallback(async (reviewId) => {
     if (!deviceId) {
-      Alert.alert('Error', 'Device ID not ready yet. Please try again in a moment.');
+      Alert.alert(t('common.error'), t('review.deviceNotReady'));
       return;
     }
 
@@ -189,16 +203,16 @@ const ProductDetailScreen = ({ route, navigation }) => {
       await loadReviews({ page: 0, append: false });
     } catch (e) {
       console.error(' [Helpful] toggle failed:', e);
-      Alert.alert('Error', 'Could not update helpful vote. Please check your connection.');
+      Alert.alert(t('common.error'), t('review.helpfulUpdateFailed'));
     }
-  }, [deviceId, loadReviews]);
+  }, [deviceId, loadReviews, t]);
 
   const buildLocalDeterministicSummary = React.useCallback((inputReviews) => {
     const usable = (inputReviews || []).filter((r) => (r?.comment || '').trim().length > 0);
     const count = usable.length;
     if (count === 0) {
       return {
-        takeaway: 'No reviews yet.',
+        takeaway: t('product.noReviews'),
         pros: [],
         cons: [],
         topTopics: [],
@@ -232,9 +246,9 @@ const ProductDetailScreen = ({ route, navigation }) => {
     const pros = pick(positives, 3);
     const cons = pick(negatives, 3);
 
-    let takeaway = `Based on ${count} review${count === 1 ? '' : 's'}, average rating is ${avgRounded}/5.`;
-    if (avgRounded >= 4.2) takeaway = `Most reviewers are very happy (avg ${avgRounded}/5 from ${count}).`;
-    if (avgRounded <= 2.8) takeaway = `Many reviewers are dissatisfied (avg ${avgRounded}/5 from ${count}).`;
+    let takeaway = t('review.localTakeawayGeneric', { count, avg: avgRounded });
+    if (avgRounded >= 4.2) takeaway = t('review.localTakeawayHappy', { count, avg: avgRounded });
+    if (avgRounded <= 2.8) takeaway = t('review.localTakeawayUnhappy', { count, avg: avgRounded });
 
     return {
         takeaway,
@@ -242,7 +256,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
         cons: negatives.slice(0, 3).map(c => c.split(/\.|\n|\r|!|\?/)[0].trim().slice(0, 90)),
         topTopics: [],
       };
-  }, []);
+  }, [t]);
 
   const loadReviewSummary = React.useCallback(async () => {
     if (!productId) return;
@@ -380,18 +394,18 @@ const ProductDetailScreen = ({ route, navigation }) => {
   const submitEdit = async () => {
     if (!editingReviewId) return;
     if (!deviceId) {
-      Alert.alert('Error', 'Device ID is not ready yet. Please try again.');
+      Alert.alert(t('common.error'), t('review.deviceNotReady'));
       return;
     }
 
     const rawComment = editComment;
     const trimmedComment = rawComment.trim();
     if (rawComment.length > 0 && trimmedComment.length === 0) {
-      Alert.alert('Validation Error', 'Comment must be at least 10 characters long.');
+      Alert.alert(t('review.validationError'), t('review.commentMin'));
       return;
     }
     if (trimmedComment.length > 0 && trimmedComment.length < 10) {
-      Alert.alert('Validation Error', 'Comment must be at least 10 characters long.');
+      Alert.alert(t('review.validationError'), t('review.commentMin'));
       return;
     }
 
@@ -409,9 +423,9 @@ const ProductDetailScreen = ({ route, navigation }) => {
       console.error('Error updating review:', e);
       const status = e?.response?.status;
       if (status === 403) {
-        Alert.alert('Not allowed', 'You can only edit your own review.');
+        Alert.alert(t('review.notAllowed'), t('review.onlyEditOwn'));
       } else {
-        Alert.alert('Error', 'Failed to update review.');
+        Alert.alert(t('common.error'), t('review.failedToUpdate'));
       }
     } finally {
       setEditSubmitting(false);
@@ -420,13 +434,13 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
   const confirmDelete = (reviewId) => {
     if (!deviceId) {
-      Alert.alert('Error', 'Device ID is not ready yet. Please try again.');
+      Alert.alert(t('common.error'), t('review.deviceNotReady'));
       return;
     }
-    Alert.alert('Delete review?', 'This action cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('review.deleteReviewTitle'), t('review.deleteReviewMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -436,9 +450,9 @@ const ProductDetailScreen = ({ route, navigation }) => {
             console.error('Error deleting review:', e);
             const status = e?.response?.status;
             if (status === 403) {
-              Alert.alert('Not allowed', 'You can only delete your own review.');
+              Alert.alert(t('review.notAllowed'), t('review.onlyDeleteOwn'));
             } else {
-              Alert.alert('Error', 'Failed to delete review.');
+              Alert.alert(t('common.error'), t('review.failedToDelete'));
             }
           }
         },
@@ -529,21 +543,17 @@ const ProductDetailScreen = ({ route, navigation }) => {
       <View style={styles.reviewHeader}>
         <View style={styles.reviewIdentity}>
           <View style={[styles.avatar, { backgroundColor: theme.isDark ? '#1f2a3a' : '#ece7ff' }]}> 
-            <Text style={[styles.avatarText, { color: theme.colors.primary }]}>
-              {((item.reviewerName || 'Anonymous').trim()[0] || 'A').toUpperCase()}
-            </Text>
+            <Text style={[styles.avatarText, { color: theme.colors.primary }]}>{((item.reviewerName || t('review.anonymous')).trim()[0] || 'A').toUpperCase()}</Text>
           </View>
           <View style={styles.nameMeta}>
-            <Text style={[styles.reviewerName, { color: theme.colors.text }]}>{item.reviewerName || 'Anonymous'}</Text>
+            <Text style={[styles.reviewerName, { color: theme.colors.text }]}>{item.reviewerName || t('review.anonymous')}</Text>
             {item.createdAt && (
-              <Text style={[styles.reviewDate, { color: theme.colors.textSecondary }]}>
-                {getRelativeTime(item.createdAt)}
-              </Text>
+              <Text style={[styles.reviewDate, { color: theme.colors.textSecondary }]}>{getRelativeTime(item.createdAt)}</Text>
             )}
           </View>
         </View>
         <View style={[styles.ratingBadge, { backgroundColor: theme.colors.primary }]}> 
-          <Text style={styles.ratingBadgeText}>⭐ {item.rating}/5</Text>
+          <Text style={styles.ratingBadgeText}> {item.rating}/5</Text>
         </View>
       </View>
       {isOwn && (
@@ -555,7 +565,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
             hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
           >
             <Ionicons name="create-outline" size={16} color={theme.colors.text} />
-            <Text style={[styles.reviewActionText, { color: theme.colors.text }]}>Edit</Text>
+            <Text style={[styles.reviewActionText, { color: theme.colors.text }]}>{t('common.edit')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.reviewActionButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, marginLeft: 10 }]}
@@ -564,7 +574,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
             hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
           >
             <Ionicons name="trash-outline" size={16} color={theme.colors.danger} />
-            <Text style={[styles.reviewActionText, { color: theme.colors.danger }]}>Delete</Text>
+            <Text style={[styles.reviewActionText, { color: theme.colors.danger }]}>{t('common.delete')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -580,7 +590,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
           hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
         >
           <Ionicons name="thumbs-up-outline" size={16} color={theme.colors.text} />
-          <Text style={[styles.helpfulText, { color: theme.colors.text }]}>Helpful</Text>
+          <Text style={[styles.helpfulText, { color: theme.colors.text }]}>{t('review.helpful')}</Text>
         </TouchableOpacity>
         <Text style={[styles.helpfulCount, { color: theme.colors.textSecondary }]}>
           {Number(item?.helpfulCount || 0)}
@@ -629,7 +639,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
   if (!product && !loading) {
     return (
       <View style={[styles.centerContainer, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.errorText, { color: theme.colors.danger }]}>Product not found</Text>
+        <Text style={[styles.errorText, { color: theme.colors.danger }]}>{t('product.notFound')}</Text>
       </View>
     );
   }
@@ -666,7 +676,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
             ⭐ {Number(product?.averageRating || 0).toFixed(1)}
           </Text>
           <Text style={[styles.stickyMeta, { color: theme.colors.textSecondary, marginLeft: 10 }]}>
-            {totalCount} reviews
+            {totalCount} {t('product.reviews')}
           </Text>
         </View>
       </Animated.View>
@@ -710,7 +720,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
           ) : (
             <>
               <Text style={[styles.productName, { color: theme.colors.text }]}>{product?.name}</Text>
-              <Text style={[styles.productCategory, { color: theme.colors.textSecondary }]}>{product?.category}</Text>
+              <Text style={[styles.productCategory, { color: theme.colors.textSecondary }]}>{localizedCategory}</Text>
               <View style={styles.priceContainer}>
                 <Text style={[styles.productPrice, { color: theme.colors.primary }]}>
                   ${Number(product?.price || 0).toFixed(2)}
@@ -752,10 +762,10 @@ const ProductDetailScreen = ({ route, navigation }) => {
                 </Animated.Text>
                 <View style={styles.ratingMetaCol}>
                   <Text style={[styles.ratingMetaText, { color: theme.colors.textSecondary }]}>
-                    Average rating
+                    {t('product.averageRating')}
                   </Text>
                   <Text style={[styles.ratingMetaText, { color: theme.colors.textSecondary, marginTop: 4 }]}>
-                    {totalCount} {totalCount === 1 ? 'review' : 'reviews'}
+                    {t('review.totalReviews', { count: totalCount })}
                   </Text>
                 </View>
               </View>
@@ -799,7 +809,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
             </View>
           ) : (
             <>
-              <Text style={[styles.descriptionTitle, { color: theme.colors.text }]}>Description</Text>
+              <Text style={[styles.descriptionTitle, { color: theme.colors.text }]}>{t('product.description')}</Text>
               <Text style={[styles.description, { color: theme.colors.textSecondary }]}>{product?.description}</Text>
             </>
           )}
@@ -807,7 +817,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
         <View style={[styles.reviewsSection, { backgroundColor: theme.colors.surface }]}> 
           <Text style={[styles.reviewsTitle, { color: theme.colors.text }]}>
-            Reviews ({product?.reviewCount || reviews.length})
+            {t('product.reviews')} ({product?.reviewCount || reviews.length})
           </Text>
 
           {reviewsLoading && (
@@ -839,14 +849,14 @@ const ProductDetailScreen = ({ route, navigation }) => {
                 style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
                 onPress={() => loadReviews({ page: 0, append: false })}
               >
-                <Text style={styles.retryButtonText}>Retry</Text>
+                <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
               </TouchableOpacity>
             </View>
           )}
 
           {!reviewsLoading && !reviewsError && reviews.length === 0 && (
             <View style={styles.noReviewsContainer}>
-              <Text style={[styles.noReviewsText, { color: theme.colors.textSecondary }]}>No reviews yet. Be the first to review!</Text>
+              <Text style={[styles.noReviewsText, { color: theme.colors.textSecondary }]}>{t('product.beFirstToReview')}</Text>
             </View>
           )}
 
@@ -867,7 +877,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
                   {reviewsLoadingMore ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={styles.loadMoreButtonText}>Load more</Text>
+                    <Text style={styles.loadMoreButtonText}>{t('review.loadMore')}</Text>
                   )}
                 </TouchableOpacity>
               )}
@@ -890,24 +900,24 @@ const ProductDetailScreen = ({ route, navigation }) => {
               contentContainerStyle={styles.editContent}
             >
               <View style={styles.editHeader}>
-                <Text style={[styles.editTitle, { color: theme.colors.text }]}>Edit your review</Text>
+                <Text style={[styles.editTitle, { color: theme.colors.text }]}>{t('review.editYourReview')}</Text>
                 <TouchableOpacity onPress={closeEdit}>
                   <Text style={[styles.editClose, { color: theme.colors.text }]}>✕</Text>
                 </TouchableOpacity>
               </View>
 
-              <Text style={[styles.editLabel, { color: theme.colors.text }]}>Your Name (Optional)</Text>
+              <Text style={[styles.editLabel, { color: theme.colors.text }]}>{t('review.yourNameOptional')}</Text>
               <TextInput
                 style={[styles.editInput, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceAlt }]}
                 value={editReviewerName}
                 onChangeText={setEditReviewerName}
-                placeholder="Enter your name"
+                placeholder={t('review.enterYourName')}
                 placeholderTextColor={theme.colors.textSecondary}
                 returnKeyType="done"
                 onSubmitEditing={Keyboard.dismiss}
               />
 
-              <Text style={[styles.editLabel, { color: theme.colors.text }]}>Rating</Text>
+              <Text style={[styles.editLabel, { color: theme.colors.text }]}>{t('review.rating')}</Text>
               <View style={styles.editStarsRow}>
                 {[1, 2, 3, 4, 5].map((s) => (
                   <TouchableOpacity key={s} onPress={() => setEditRating(s)} style={styles.editStarButton}>
@@ -917,12 +927,12 @@ const ProductDetailScreen = ({ route, navigation }) => {
                 <Text style={[styles.editRatingText, { color: theme.colors.text }]}>{editRating} / 5</Text>
               </View>
 
-              <Text style={[styles.editLabel, { color: theme.colors.text }]}>Review Comment (Optional)</Text>
+              <Text style={[styles.editLabel, { color: theme.colors.text }]}>{t('review.reviewCommentOptional')}</Text>
               <TextInput
                 style={[styles.editInput, styles.editTextArea, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceAlt }]}
                 value={editComment}
                 onChangeText={setEditComment}
-                placeholder="Write your review (optional)"
+                placeholder={t('review.writeYourReviewOptional')}
                 placeholderTextColor={theme.colors.textSecondary}
                 multiline
                 numberOfLines={6}
@@ -940,7 +950,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
                 {editSubmitting ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.editSubmitText}>Save changes</Text>
+                  <Text style={styles.editSubmitText}>{t('common.saveChanges')}</Text>
                 )}
               </TouchableOpacity>
             </ScrollView>

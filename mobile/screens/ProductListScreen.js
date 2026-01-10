@@ -112,6 +112,21 @@ const ProductListScreen = ({ navigation }) => {
     [t]
   );
 
+  const localizeCategory = useCallback(
+    (category) => {
+      const raw = (category || '').trim();
+      const norm = raw.toLowerCase();
+      if (!raw) return raw;
+      if (norm === 'electronics') return t('category.electronics');
+      if (norm === 'clothing') return t('category.clothing');
+      if (norm === 'books') return t('category.books');
+      if (norm === 'home & kitchen' || norm === 'home and kitchen' || norm === 'homekitchen') return t('category.homeKitchen');
+      if (norm === 'sports & outdoors' || norm === 'sports and outdoors' || norm === 'sportsoutdoors') return t('category.sportsOutdoors');
+      return raw;
+    },
+    [t]
+  );
+
   const selectedSortLabel = useMemo(() => {
     const found = sortOptions.find((s) => s.sortBy === sortBy && s.sortDir === sortDir);
     if (found) return found.label;
@@ -479,12 +494,12 @@ const ProductListScreen = ({ navigation }) => {
     console.log('🔍 [ProductList] Navigating to ProductDetail with item:', JSON.stringify(item, null, 2));
     if (!item || !item.id) {
       console.error('🔍 [ProductList] Error: productId is undefined for item:', JSON.stringify(item, null, 2));
-      Alert.alert('Error', 'Unable to load product details. Invalid product data.');
+      Alert.alert(t('common.error'), t('product.invalidProductData'));
       return;
     }
     console.log('🔍 [ProductList] Navigating to ProductDetail with productId:', item.id);
     navigation.navigate('ProductDetail', { productId: item.id });
-  }, [navigation]);
+  }, [navigation, t]);
 
   const renderProduct = ({ item, index }) => {
     console.log('🔍 [ProductList] Rendering product item at index', index, 'with data:', JSON.stringify(item, null, 2));
@@ -590,7 +605,7 @@ const ProductListScreen = ({ navigation }) => {
         <View style={[styles.activeFilters, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}> 
           {selectedCategory && (
             <View style={[styles.filterChip, { backgroundColor: theme.colors.surfaceAlt, borderColor: theme.colors.border }]}> 
-              <Text style={[styles.filterChipText, { color: theme.colors.text }]}>{t('filters.category')}: {selectedCategory}</Text>
+              <Text style={[styles.filterChipText, { color: theme.colors.text }]}>{t('filters.category')}: {localizeCategory(selectedCategory)}</Text>
               <TouchableOpacity onPress={() => setSelectedCategory(null)}>
                 <Text style={[styles.filterChipClose, { color: theme.colors.text }]}>✕</Text>
               </TouchableOpacity>
@@ -714,7 +729,7 @@ const ProductListScreen = ({ navigation }) => {
                         { color: theme.colors.text },
                         selectedCategory === category && styles.categoryChipTextActive
                       ]}>
-                        {category}
+                        {localizeCategory(category)}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -746,7 +761,7 @@ const ProductListScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.filterSection}>
-                <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Minimum Rating</Text>
+                <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>{t('filters.minimumRating')}</Text>
                 <View style={styles.categoryContainer}>
                   {[4, 3, 2, 1].map((r) => (
                     <TouchableOpacity
@@ -771,14 +786,14 @@ const ProductListScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.filterSection}>
-                <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Price Range</Text>
+                <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>{t('filters.priceRange')}</Text>
                 <View style={styles.priceRow}>
                   <TextInput
                     style={[styles.priceInput, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceAlt }]}
                     value={minPrice}
                     onChangeText={setMinPrice}
                     keyboardType="numeric"
-                    placeholder="Min"
+                    placeholder={t('filters.min')}
                     placeholderTextColor={theme.colors.textSecondary}
                   />
                   <TextInput
@@ -786,7 +801,7 @@ const ProductListScreen = ({ navigation }) => {
                     value={maxPrice}
                     onChangeText={setMaxPrice}
                     keyboardType="numeric"
-                    placeholder="Max"
+                    placeholder={t('filters.max')}
                     placeholderTextColor={theme.colors.textSecondary}
                   />
                 </View>
@@ -801,7 +816,7 @@ const ProductListScreen = ({ navigation }) => {
                   loadProducts(0, false);
                 }}
               >
-                <Text style={styles.applyButtonText}>Apply Filters</Text>
+                <Text style={styles.applyButtonText}>{t('filters.applyFilters')}</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
