@@ -18,7 +18,7 @@ const Stack = createNativeStackNavigator();
 
 const AppShell = () => {
   const { theme } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const navTheme = theme?.isDark
     ? {
@@ -49,6 +49,7 @@ const AppShell = () => {
       <NavigationContainer theme={navTheme}>
         <StatusBar style={theme?.isDark ? 'light' : 'dark'} />
         <Stack.Navigator
+          key={(i18n.language || 'en').split('-')[0]}
           initialRouteName="ProductList"
           screenOptions={{
             headerStyle: {
