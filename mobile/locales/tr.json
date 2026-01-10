@@ -77,6 +77,21 @@
     "ratingBetween": "Puan 1 ile 5 arasında olmalıdır.",
     "commentMin": "Yorum en az 10 karakter olmalıdır."
   },
+  "time": {
+    "justNow": "az önce",
+    "minuteAgo_one": "{{count}} dakika önce",
+    "minuteAgo_other": "{{count}} dakika önce",
+    "hourAgo_one": "{{count}} saat önce",
+    "hourAgo_other": "{{count}} saat önce",
+    "dayAgo_one": "{{count}} gün önce",
+    "dayAgo_other": "{{count}} gün önce",
+    "weekAgo_one": "{{count}} hafta önce",
+    "weekAgo_other": "{{count}} hafta önce",
+    "monthAgo_one": "{{count}} ay önce",
+    "monthAgo_other": "{{count}} ay önce",
+    "yearAgo_one": "{{count}} yıl önce",
+    "yearAgo_other": "{{count}} yıl önce"
+  },
   "filters": {
     "filters": "Filtreler",
     "filtersAndSort": "Filtreler ve Sıralama",

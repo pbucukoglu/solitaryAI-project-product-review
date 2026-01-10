@@ -77,6 +77,21 @@
     "ratingBetween": "La calificación debe estar entre 1 y 5.",
     "commentMin": "El comentario debe tener al menos 10 caracteres."
   },
+  "time": {
+    "justNow": "justo ahora",
+    "minuteAgo_one": "hace {{count}} minuto",
+    "minuteAgo_other": "hace {{count}} minutos",
+    "hourAgo_one": "hace {{count}} hora",
+    "hourAgo_other": "hace {{count}} horas",
+    "dayAgo_one": "hace {{count}} día",
+    "dayAgo_other": "hace {{count}} días",
+    "weekAgo_one": "hace {{count}} semana",
+    "weekAgo_other": "hace {{count}} semanas",
+    "monthAgo_one": "hace {{count}} mes",
+    "monthAgo_other": "hace {{count}} meses",
+    "yearAgo_one": "hace {{count}} año",
+    "yearAgo_other": "hace {{count}} años"
+  },
   "filters": {
     "filters": "Filtros",
     "filtersAndSort": "Filtros y orden",

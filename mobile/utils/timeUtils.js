@@ -1,5 +1,7 @@
 // Utility functions for time formatting
 
+import i18n from '../i18n';
+
 export const getRelativeTime = (dateString, locale = 'en') => {
   const date = new Date(dateString);
   const now = new Date();
@@ -18,6 +20,8 @@ export const getRelativeTime = (dateString, locale = 'en') => {
       ? new Intl.RelativeTimeFormat(safeLocale, { numeric: 'auto' })
       : null;
 
+  const t = (key, options = {}) => i18n.t(key, { lng: safeLocale, ...options });
+
   const fmt = (value, unit, fallback) => {
     if (rtf) {
       try {
@@ -30,19 +34,19 @@ export const getRelativeTime = (dateString, locale = 'en') => {
   };
 
   if (diffSeconds < 60) {
-    return fmt(0, 'second', 'just now');
+    return fmt(0, 'second', t('time.justNow'));
   } else if (diffMinutes < 60) {
-    return fmt(-diffMinutes, 'minute', `${diffMinutes} ${diffMinutes === 1 ? 'minute' : 'minutes'} ago`);
+    return fmt(-diffMinutes, 'minute', t('time.minuteAgo', { count: diffMinutes }));
   } else if (diffHours < 24) {
-    return fmt(-diffHours, 'hour', `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`);
+    return fmt(-diffHours, 'hour', t('time.hourAgo', { count: diffHours }));
   } else if (diffDays < 7) {
-    return fmt(-diffDays, 'day', `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`);
+    return fmt(-diffDays, 'day', t('time.dayAgo', { count: diffDays }));
   } else if (diffWeeks < 4) {
-    return fmt(-diffWeeks, 'week', `${diffWeeks} ${diffWeeks === 1 ? 'week' : 'weeks'} ago`);
+    return fmt(-diffWeeks, 'week', t('time.weekAgo', { count: diffWeeks }));
   } else if (diffMonths < 12) {
-    return fmt(-diffMonths, 'month', `${diffMonths} ${diffMonths === 1 ? 'month' : 'months'} ago`);
+    return fmt(-diffMonths, 'month', t('time.monthAgo', { count: diffMonths }));
   } else {
-    return fmt(-diffYears, 'year', `${diffYears} ${diffYears === 1 ? 'year' : 'years'} ago`);
+    return fmt(-diffYears, 'year', t('time.yearAgo', { count: diffYears }));
   }
 };
 
