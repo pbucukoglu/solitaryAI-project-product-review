@@ -2,19 +2,19 @@
 
 ## Quick Start
 
-You already have an Android emulator configured: **Pixel_2_API_34**
+You should have an Android emulator (AVD) configured in Android Studio.
 
 ### Starting the Emulator
 
 **Option 1: From Command Line (PowerShell)**
 ```powershell
-& "$env:LOCALAPPDATA\Android\Sdk\emulator\emulator.exe" -avd Pixel_2_API_34
+emulator -avd YOUR_AVD_NAME
 ```
 
 **Option 2: From Android Studio**
 1. Open Android Studio
 2. Click on "Device Manager" (or "More Actions" → "Virtual Device Manager")
-3. Find "Pixel_2_API_34" in the list
+3. Find your AVD in the list
 4. Click the ▶️ play button
 5. Wait for emulator to boot (1-2 minutes)
 
@@ -96,6 +96,6 @@ If you need a different emulator:
 **Your current setup:**
 - ✅ Android SDK installed
 - ✅ ADB working
-- ✅ Emulator configured: Pixel_2_API_34
+- ✅ Emulator configured: YOUR_AVD_NAME
 - ✅ Ready to run Expo app!
 

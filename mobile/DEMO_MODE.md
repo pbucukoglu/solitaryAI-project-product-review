@@ -45,7 +45,7 @@ When in demo mode, you'll see:
 
 ### Configuring Base URL
 1. **Current URL**: Displays the currently configured backend URL
-2. **Input Field**: Enter your backend URL (e.g., `http://192.168.1.100:8080`)
+2. **Input Field**: Enter your backend URL (e.g., `http://YOUR_COMPUTER_IP:8080`)
 3. **Test Connection**: Validates the URL and shows connection status
    - 🟢 Green checkmark = Connection successful
    - 🔴 Red X = Connection failed
@@ -54,7 +54,7 @@ When in demo mode, you'll see:
 
 ### URL Format Tips
 - **Local Development**: `http://localhost:8080` or `http://127.0.0.1:8080`
-- **Network Device**: `http://192.168.1.100:8080` (replace with your IP)
+- **Network Device**: `http://YOUR_COMPUTER_IP:8080`
 - **Production**: `https://your-api-domain.com`
 - **No trailing slash**: Don't end URLs with `/`
 

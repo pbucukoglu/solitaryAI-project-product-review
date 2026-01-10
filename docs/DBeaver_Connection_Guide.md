@@ -46,12 +46,12 @@ Fill in the following information:
 **Main Tab:**
 - **Host:** `localhost`
 - **Port:** `5432`
-- **Database:** Set via `POSTGRES_DB` environment variable (default: see chat)
-- **Username:** Set via `POSTGRES_USER` environment variable (default: see chat)
-- **Password:** Set via `POSTGRES_PASSWORD` environment variable (default: see chat)
+- **Database:** Set via `POSTGRES_DB` environment variable
+- **Username:** Set via `POSTGRES_USER` environment variable
+- **Password:** Set via `POSTGRES_PASSWORD` environment variable
 - **Show all databases:** Leave unchecked
 
-**Note:** Database credentials are stored in environment variables. Check chat or your local `.env` file for actual values.
+**Note:** Database credentials are stored in environment variables or your local `.env` file.
 
 **Driver Properties Tab (Optional):**
 - No changes needed for basic connection

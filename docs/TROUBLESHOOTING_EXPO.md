@@ -14,7 +14,7 @@
 
 2. **Verify API URL in Console:**
    - When Expo starts, check the console output
-   - You should see: `API Base URL: http://192.168.1.20:8080`
+   - You should see: `API Base URL: http://YOUR_COMPUTER_IP:8080`
    - If you see a different URL, the config didn't load
 
 3. **Reload Expo Go App:**
@@ -24,7 +24,7 @@
    - Scan QR code again
 
 4. **Check Backend is Accessible:**
-   - On your phone's browser, open: `http://192.168.1.20:8080/api/products`
+   - On your phone's browser, open: `http://YOUR_COMPUTER_IP:8080/api/products`
    - You should see JSON data
    - If not, backend or network issue
 
@@ -46,7 +46,7 @@
 
 **Issue: API URL shows `http://10.0.2.2:8080` on physical device**
 - **Solution:** `PHYSICAL_DEVICE_IP` in `mobile/config/api.js` is not set correctly
-- Update it with your computer's IP: `const PHYSICAL_DEVICE_IP = '192.168.1.20';`
+- Update it with your computer's IP: `const PHYSICAL_DEVICE_IP = 'YOUR_COMPUTER_IP';`
 
 **Issue: "Network request failed"**
 - Backend is not running

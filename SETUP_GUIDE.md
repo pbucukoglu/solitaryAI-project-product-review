@@ -220,7 +220,7 @@ You have two options:
 **Windows (PowerShell):**
 ```powershell
 # Navigate to project root (where docker-compose.yml is located)
-cd C:\Users\pelin\Documents\GitHub\solitaryAI-project-product-review
+cd C:\path\to\solitaryAI-project-product-review
 
 # Start PostgreSQL
 docker-compose up -d
@@ -460,7 +460,7 @@ The app automatically detects the environment, but you may need to update it for
    // In the getApiBaseUrl function, replace:
    return 'http://YOUR_COMPUTER_IP:8080'; // REPLACE WITH YOUR COMPUTER'S IP
    // With your actual IP, e.g.:
-   return 'http://192.168.1.100:8080';
+   return 'http://YOUR_COMPUTER_IP:8080';
    ```
 
 **Important:** 
