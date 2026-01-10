@@ -25,14 +25,34 @@ const fetchJsonWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
     timeoutPromise,
   ]);
 
+  const status = response.status;
+
+  // 204 No Content: do not attempt to parse
+  if (status === 204) {
+    return null;
+  }
+
+  const rawText = await response.text();
+
   if (!response.ok) {
-    const message = response.status === 404 ? 'Not found' : `HTTP_${response.status}`;
-    const err = new Error(message);
-    err.status = response.status;
+    const messageFromBody = (rawText || '').trim();
+    const fallback = status === 404 ? 'Not found' : `HTTP_${status}`;
+    const err = new Error(messageFromBody || fallback);
+    err.status = status;
+    err.body = messageFromBody || null;
     throw err;
   }
 
-  return await response.json();
+  const trimmed = (rawText || '').trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return trimmed;
+  }
 };
 
 // Products API

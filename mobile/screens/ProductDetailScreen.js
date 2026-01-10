@@ -421,9 +421,11 @@ const ProductDetailScreen = ({ route, navigation }) => {
       await refreshAll();
     } catch (e) {
       console.error('Error updating review:', e);
-      const status = e?.response?.status;
+      const status = e?.status ?? e?.response?.status;
       if (status === 403) {
         Alert.alert(t('review.notAllowed'), t('review.onlyEditOwn'));
+      } else if (status === 404) {
+        Alert.alert(t('common.error'), String(e?.message || 'Not found'));
       } else {
         Alert.alert(t('common.error'), t('review.failedToUpdate'));
       }
@@ -448,9 +450,11 @@ const ProductDetailScreen = ({ route, navigation }) => {
             await refreshAll();
           } catch (e) {
             console.error('Error deleting review:', e);
-            const status = e?.response?.status;
+            const status = e?.status ?? e?.response?.status;
             if (status === 403) {
               Alert.alert(t('review.notAllowed'), t('review.onlyDeleteOwn'));
+            } else if (status === 404) {
+              Alert.alert(t('common.error'), String(e?.message || 'Not found'));
             } else {
               Alert.alert(t('common.error'), t('review.failedToDelete'));
             }
