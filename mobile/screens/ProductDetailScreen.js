@@ -64,6 +64,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
   const [reviewSummary, setReviewSummary] = useState(null);
   const [reviewSummarySource, setReviewSummarySource] = useState(null);
   const [reviewSummaryError, setReviewSummaryError] = useState(null);
+  const [translatedReviewSummary, setTranslatedReviewSummary] = useState(null);
 
   const latestReviewsRef = React.useRef([]);
   const latestReviewCountRef = React.useRef(0);
@@ -94,6 +95,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
     // Reset translations when language changes or data changes
     setTranslatedDescription(null);
     setTranslatedCommentsById({});
+    setTranslatedReviewSummary(null);
   }, [currentLang, product?.id, reviews?.length]);
 
   useEffect(() => {
@@ -144,6 +146,94 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
     run();
   }, [currentLang, product, reviews]);
+
+  useEffect(() => {
+    const run = async () => {
+      const lang = (currentLang || 'en').toLowerCase();
+      if (lang === 'en') {
+        setTranslatedReviewSummary(null);
+        return;
+      }
+
+      if (!reviewSummary) {
+        setTranslatedReviewSummary(null);
+        return;
+      }
+
+      const takeaway = (reviewSummary?.takeaway || '').trim();
+      const pros = Array.isArray(reviewSummary?.pros) ? reviewSummary.pros : [];
+      const cons = Array.isArray(reviewSummary?.cons) ? reviewSummary.cons : [];
+      const topTopics = Array.isArray(reviewSummary?.topTopics) ? reviewSummary.topTopics : [];
+
+      const texts = [];
+      const map = [];
+
+      if (takeaway) {
+        map.push(['takeaway', 0, null]);
+        texts.push(takeaway);
+      }
+      for (let i = 0; i < pros.length; i += 1) {
+        const v = (pros[i] || '').trim();
+        if (!v) continue;
+        map.push(['pros', i, null]);
+        texts.push(v);
+      }
+      for (let i = 0; i < cons.length; i += 1) {
+        const v = (cons[i] || '').trim();
+        if (!v) continue;
+        map.push(['cons', i, null]);
+        texts.push(v);
+      }
+      for (let i = 0; i < topTopics.length; i += 1) {
+        const v = (topTopics[i] || '').trim();
+        if (!v) continue;
+        map.push(['topTopics', i, null]);
+        texts.push(v);
+      }
+
+      if (texts.length === 0) {
+        setTranslatedReviewSummary(null);
+        return;
+      }
+
+      try {
+        const res = await translationService.translateBatch(lang, texts);
+        const translations = Array.isArray(res?.translations) ? res.translations : null;
+        if (!translations || translations.length !== texts.length) {
+          setTranslatedReviewSummary(null);
+          return;
+        }
+
+        const next = {
+          takeaway: takeaway,
+          pros: [...pros],
+          cons: [...cons],
+          topTopics: [...topTopics],
+        };
+
+        let idx = 0;
+        for (const [field, i] of map) {
+          const translated = (translations[idx] || '').toString();
+          if (field === 'takeaway') {
+            next.takeaway = translated || takeaway;
+          } else if (field === 'pros') {
+            next.pros[i] = translated || next.pros[i];
+          } else if (field === 'cons') {
+            next.cons[i] = translated || next.cons[i];
+          } else if (field === 'topTopics') {
+            next.topTopics[i] = translated || next.topTopics[i];
+          }
+          idx += 1;
+        }
+
+        setTranslatedReviewSummary(next);
+      } catch {
+        setTranslatedReviewSummary(null);
+      }
+    };
+
+    run();
+  }, [currentLang, reviewSummary]);
 
   useEffect(() => {
     latestReviewCountRef.current = Number(product?.reviewCount || 0);
@@ -609,7 +699,9 @@ const ProductDetailScreen = ({ route, navigation }) => {
           <View style={styles.nameMeta}>
             <Text style={[styles.reviewerName, { color: theme.colors.text }]}>{item.reviewerName || t('review.anonymous')}</Text>
             {item.createdAt && (
-              <Text style={[styles.reviewDate, { color: theme.colors.textSecondary }]}>{getRelativeTime(item.createdAt)}</Text>
+              <Text style={[styles.reviewDate, { color: theme.colors.textSecondary }]}>
+                {getRelativeTime(item.createdAt, currentLang)}
+              </Text>
             )}
           </View>
         </View>
@@ -854,7 +946,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
         <ReviewSummaryCard
           loading={reviewSummaryLoading}
-          summary={reviewSummary}
+          summary={translatedReviewSummary || reviewSummary}
           empty={(Number(product?.reviewCount || 0) || reviews.length) === 0}
           source={reviewSummarySource}
         />
